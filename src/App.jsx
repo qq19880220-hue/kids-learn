@@ -1011,7 +1011,7 @@ function UserSelectScreen({ users, familyCode, syncStatus, onSelect, onAddNew, o
                     </div>
                   </button>
                   {editMode && (
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-lg text-lg animate-bounce">
+                    <div className="absolute -top-3 -right-3 w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-lg text-2xl pointer-events-none ring-4 ring-white">
                       ✕
                     </div>
                   )}
