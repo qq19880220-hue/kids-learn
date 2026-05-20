@@ -2701,7 +2701,7 @@ function EnCategoryGame({ onCorrect, onWrong, speakEn }) {
 
 // ============ 邏輯:找規律 ============
 function LogicPatternGame({ onCorrect, onWrong }) {
-  const PATTERN_EMOJIS = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⭐', '❤️', '🌸', '🍎'];
+  const PATTERN_EMOJIS = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⭐', '❤️', '🌸', '🍎', '🔶', '⚪', '🌈', '💎'];
   const [sequence, setSequence] = useState([]);
   const [answer, setAnswer] = useState(null);
   const [opts, setOpts] = useState([]);
@@ -2709,17 +2709,25 @@ function LogicPatternGame({ onCorrect, onWrong }) {
   const [score, setScore] = useState(0);
 
   const newRound = () => {
-    // 從 emojis 隨機挑 2-3 個作為模式
     const pool = [...PATTERN_EMOJIS].sort(() => Math.random() - 0.5);
     const types = [
-      () => { const [a, b] = pool; return { pat: [a, b, a, b, a, b], next: b, all: [a, b] }; }, // ABABAB
-      () => { const [a, b] = pool; return { pat: [a, a, b, b, a, a], next: b, all: [a, b] }; }, // AABBAA
-      () => { const [a, b, c] = pool; return { pat: [a, b, c, a, b, c], next: a, all: [a, b, c] }; }, // ABCABC
-      () => { const [a, b] = pool; return { pat: [a, b, b, a, b, b], next: a, all: [a, b] }; }, // ABBABB
-      () => { const [a, b] = pool; return { pat: [a, a, b, a, a, b], next: a, all: [a, b] }; }, // AABAAB
+      // 基礎(score < 3)
+      () => { const [a, b] = pool;    return { pat: [a, b, a, b, a, b], next: b, all: [a, b] }; },         // ABABAB
+      () => { const [a, b] = pool;    return { pat: [a, a, b, b, a, a], next: b, all: [a, b] }; },         // AABBAA
+      // 進階(score >= 3)
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, a, b, c, a], next: b, all: [a, b, c] }; },   // ABCABCA
+      () => { const [a, b] = pool;    return { pat: [a, b, b, a, b, b, a], next: b, all: [a, b] }; },      // ABBABBA
+      () => { const [a, b] = pool;    return { pat: [a, a, b, a, a, b, a], next: a, all: [a, b] }; },      // AABAABA
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, c, b, a, b], next: c, all: [a, b, c] }; },   // 回文 ABCCBA
+      // 高階(score >= 6)
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, b, a, b, c], next: b, all: [a, b, c] }; },   // ABCBABC
+      () => { const [a, b, c, d] = pool; return { pat: [a, b, c, d, a, b, c], next: d, all: [a, b, c, d] }; }, // ABCDABCD
+      () => { const [a, b, c] = pool; return { pat: [a, a, b, c, a, a, b], next: c, all: [a, b, c] }; },   // AABCAABC
+      () => { const [a, b, c] = pool; return { pat: [a, b, b, c, c, c, a], next: b, all: [a, b, c] }; },   // ABBCCCABB
     ];
-    const { pat, next, all } = types[Math.floor(Math.random() * types.length)]();
-    // 干擾選項
+    // 漸進難度:分數越高,題型範圍越廣
+    const max = score < 3 ? 2 : score < 6 ? 6 : types.length;
+    const { pat, next, all } = types[Math.floor(Math.random() * max)]();
     const dist = new Set();
     all.forEach(x => x !== next && dist.add(x));
     while (dist.size < 3) {
@@ -2777,21 +2785,43 @@ function LogicPatternGame({ onCorrect, onWrong }) {
   );
 }
 
-// ============ 邏輯:走迷宮(方向選擇逐步前進) ============
-function LogicMazeGame({ onCorrect, onWrong, playSound }) {
-  // 預先設計的小迷宮:每關用方向序列表示正解路徑
-  // 同時 start/end 顯示在 3x3 ~ 4x4 格子裡
-  const MAZES = [
-    { size: 3, start: [0, 0], path: ['R', 'D', 'R', 'D'] },
-    { size: 3, start: [0, 0], path: ['D', 'R', 'D', 'R'] },
-    { size: 3, start: [2, 0], path: ['U', 'U', 'R', 'R', 'D', 'D'] },
-    { size: 4, start: [0, 0], path: ['R', 'D', 'D', 'R', 'R', 'D'] },
-    { size: 4, start: [0, 0], path: ['D', 'R', 'R', 'D', 'D', 'R'] },
-    { size: 4, start: [3, 0], path: ['U', 'R', 'U', 'R', 'D', 'R', 'D'] },
-    { size: 4, start: [0, 3], path: ['D', 'L', 'D', 'L', 'D', 'L'] },
-  ];
+// ============ 邏輯:走迷宮(隨機產生,難度漸進) ============
+// 隨機走訪不重複格子,產生有效路徑
+function generateMaze(size, length) {
+  const DIRS = [['U', -1, 0], ['D', 1, 0], ['L', 0, -1], ['R', 0, 1]];
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const sr = Math.floor(Math.random() * size);
+    const sc = Math.floor(Math.random() * size);
+    let r = sr, c = sc;
+    const visited = new Set([`${r},${c}`]);
+    const path = [];
+    let ok = true;
+    for (let i = 0; i < length; i++) {
+      const choices = DIRS.filter(([, dr, dc]) => {
+        const nr = r + dr, nc = c + dc;
+        return nr >= 0 && nr < size && nc >= 0 && nc < size && !visited.has(`${nr},${nc}`);
+      });
+      if (choices.length === 0) { ok = false; break; }
+      // 避免太多連續同方向,讓路徑曲折一點
+      let pool = choices;
+      if (path.length > 0) {
+        const last = path[path.length - 1];
+        const turning = choices.filter(([d]) => d !== last);
+        if (turning.length > 0 && Math.random() < 0.6) pool = turning;
+      }
+      const [d, dr, dc] = pool[Math.floor(Math.random() * pool.length)];
+      path.push(d);
+      const nr = r + dr, nc = c + dc;
+      visited.add(`${nr},${nc}`);
+      r = nr; c = nc;
+    }
+    if (ok) return { size, start: [sr, sc], path };
+  }
+  return { size: 3, start: [0, 0], path: ['R', 'D'] };
+}
 
-  const [maze, setMaze] = useState(MAZES[0]);
+function LogicMazeGame({ onCorrect, onWrong, playSound }) {
+  const [maze, setMaze] = useState(() => generateMaze(3, 3));
   const [stepIdx, setStepIdx] = useState(0);
   const [pos, setPos] = useState([0, 0]);
   const [pet, setPet] = useState('🐶');
@@ -2801,14 +2831,20 @@ function LogicMazeGame({ onCorrect, onWrong, playSound }) {
   const [score, setScore] = useState(0);
 
   const newRound = () => {
-    const m = MAZES[Math.floor(Math.random() * MAZES.length)];
+    // 漸進難度:答對越多越難
+    let size, length;
+    if (score < 3)       { size = 3; length = 3 + Math.floor(Math.random() * 3); }   // 3x3,3-5 步
+    else if (score < 7)  { size = 4; length = 5 + Math.floor(Math.random() * 4); }   // 4x4,5-8 步
+    else if (score < 12) { size = 4; length = 7 + Math.floor(Math.random() * 5); }   // 4x4,7-11 步
+    else                 { size = 5; length = 9 + Math.floor(Math.random() * 6); }   // 5x5,9-14 步
+    const m = generateMaze(size, length);
     setMaze(m);
     setPos(m.start);
     setStepIdx(0);
     setTrail([m.start]);
     setFeedback(null);
-    const pets = ['🐶', '🐱', '🐰', '🐻'];
-    const goals = ['🦴', '🐟', '🥕', '🍯'];
+    const pets = ['🐶', '🐱', '🐰', '🐻', '🐯', '🦁', '🐵', '🐧'];
+    const goals = ['🦴', '🐟', '🥕', '🍯', '🍎', '🍌', '🍪', '🎂'];
     setPet(pets[Math.floor(Math.random() * pets.length)]);
     setGoal(goals[Math.floor(Math.random() * goals.length)]);
   };
@@ -2902,25 +2938,34 @@ function LogicMazeGame({ onCorrect, onWrong, playSound }) {
 
 // ============ 邏輯:對稱配對(找鏡像) ============
 function LogicSymmetryGame({ onCorrect, onWrong }) {
-  // 用 emoji + CSS 鏡像。題目是「找出這隻的鏡像」
-  const SYMMETRY_EMOJIS = ['🦋', '🌸', '⭐', '❤️', '🍀', '☘️', '🌟', '✨', '🦒', '🐢', '🦔'];
+  // 只用「左右不對稱」的 emoji(大多動物面朝右,鏡像會明顯不同)
+  const SYMMETRY_EMOJIS = [
+    '🦒', '🐢', '🦔', '🦊', '🐶', '🐱', '🐰', '🦁', '🐯', '🦌',
+    '🐻', '🐨', '🐸', '🐧', '🐔', '🦄', '🦘', '🦅', '🦉', '🐺',
+    '🐎', '🐬', '🦈', '🦏', '🐃', '🐊', '🦃', '🐿️', '🦘', '🐪',
+    '🦩', '🦚', '🦢', '🦝', '🐗',
+  ];
   const TRANSFORMS = [
-    { id: 'normal',   style: {} },
-    { id: 'mirrorH',  style: { transform: 'scaleX(-1)' } },
-    { id: 'mirrorV',  style: { transform: 'scaleY(-1)' } },
-    { id: 'rotate90', style: { transform: 'rotate(90deg)' } },
+    { id: 'normal',    style: {} },
+    { id: 'mirrorH',   style: { transform: 'scaleX(-1)' } },
+    { id: 'mirrorV',   style: { transform: 'scaleY(-1)' } },
+    { id: 'rotate180', style: { transform: 'rotate(180deg)' } },
   ];
   const [target, setTarget] = useState(null);
   const [opts, setOpts] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [score, setScore] = useState(0);
+  const recentRef = useRef([]); // 記最近 10 個避免重複
 
   const newRound = () => {
-    const t = SYMMETRY_EMOJIS[Math.floor(Math.random() * SYMMETRY_EMOJIS.length)];
-    // 4 個選項:鏡像版 + 其他 3 個變化(正常 / 上下翻 / 旋轉)
-    const shuffled = TRANSFORMS.slice().sort(() => Math.random() - 0.5);
+    const recent = recentRef.current;
+    const available = SYMMETRY_EMOJIS.filter(e => !recent.includes(e));
+    const pool = available.length > 0 ? available : SYMMETRY_EMOJIS;
+    const t = pool[Math.floor(Math.random() * pool.length)];
+    // 更新最近 10 個
+    recentRef.current = [t, ...recent].slice(0, Math.min(10, SYMMETRY_EMOJIS.length - 1));
     setTarget(t);
-    setOpts(shuffled);
+    setOpts(TRANSFORMS.slice().sort(() => Math.random() - 0.5));
     setFeedback(null);
   };
 
@@ -3030,28 +3075,59 @@ function LogicShadowGame({ onCorrect, onWrong }) {
   );
 }
 
-// ============ 邏輯:圖形旋轉 ============
+// ============ 邏輯:圖形旋轉(SVG 五連塊,有手性的幾何形狀) ============
+// 5 個方塊組成、左右不對稱的形狀(鏡像跟旋轉一定不同)
+const PENTOMINOES = {
+  L: [[1,0],[1,1],[1,2],[1,3],[2,3]],
+  F: [[1,0],[2,0],[1,1],[0,1],[1,2]],
+  Y: [[2,0],[1,1],[2,1],[2,2],[2,3]],
+  P: [[1,0],[2,0],[1,1],[2,1],[1,2]],
+  Z: [[1,0],[2,0],[2,1],[2,2],[3,2]],
+  N: [[2,0],[2,1],[2,2],[1,2],[1,3]],
+};
+
+const SHAPE_COLORS = ['#a855f7', '#3b82f6', '#ec4899', '#f97316', '#10b981', '#06b6d4'];
+
+function ShapeViz({ shape, transform, color, size = 100 }) {
+  const cells = PENTOMINOES[shape] || [];
+  return (
+    <svg viewBox="-0.3 -0.3 4.6 4.6" width={size} height={size} style={{ transform, display: 'inline-block' }}>
+      {cells.map(([x, y], i) => (
+        <rect key={i} x={x} y={y} width="1" height="1" fill={color} stroke="white" strokeWidth="0.12" rx="0.08" />
+      ))}
+    </svg>
+  );
+}
+
 function LogicRotationGame({ onCorrect, onWrong }) {
-  // 用不對稱字母:F, P, R, J, L, b, d, q, p, h, k(視覺有方向感)
-  const ROTATION_CHARS = ['F', 'P', 'R', 'J', 'L', 'h', 'q', 'b'];
-  const ANGLES = [0, 90, 180, 270];
+  const SHAPES = Object.keys(PENTOMINOES);
   const [target, setTarget] = useState(null);
+  const [color, setColor] = useState(SHAPE_COLORS[0]);
   const [opts, setOpts] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [score, setScore] = useState(0);
+  const recentRef = useRef([]);
 
   const newRound = () => {
-    const ch = ROTATION_CHARS[Math.floor(Math.random() * ROTATION_CHARS.length)];
-    // 正確的:同一個字母旋轉某個角度
-    const correctAngle = ANGLES[1 + Math.floor(Math.random() * 3)]; // 90/180/270
-    // 干擾:鏡像版本(scaleX(-1))也可能轉過,但本質上不同
+    const recent = recentRef.current;
+    const available = SHAPES.filter(s => !recent.includes(s));
+    const pool = available.length > 0 ? available : SHAPES;
+    const sh = pool[Math.floor(Math.random() * pool.length)];
+    recentRef.current = [sh, ...recent].slice(0, 3);
+
+    // 正解:同形狀旋轉 90/180/270
+    const correctAngle = [90, 180, 270][Math.floor(Math.random() * 3)];
+    // 干擾:鏡像 + 不同旋轉
+    const mirrorAngles = [0, 90, 180, 270].sort(() => Math.random() - 0.5).slice(0, 3);
     const choices = [
-      { id: 'rot', char: ch, transform: `rotate(${correctAngle}deg)`, isAnswer: true },
-      { id: 'mirror', char: ch, transform: `scaleX(-1) rotate(${correctAngle}deg)`, isAnswer: false },
-      { id: 'mirrorV', char: ch, transform: `scaleY(-1)`, isAnswer: false },
-      { id: 'rotOther', char: ch, transform: `rotate(${(correctAngle + 180) % 360}deg) scaleX(-1)`, isAnswer: false },
+      { id: 'rot', shape: sh, transform: `rotate(${correctAngle}deg)`, isAnswer: true },
+      { id: 'mir0', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[0]}deg)`, isAnswer: false },
+      { id: 'mir1', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[1]}deg)`, isAnswer: false },
+      { id: 'mir2', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[2]}deg)`, isAnswer: false },
     ];
-    setTarget({ char: ch });
+
+    setTarget(sh);
+    setColor(SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)]);
     setOpts(choices.sort(() => Math.random() - 0.5));
     setFeedback(null);
   };
@@ -3078,17 +3154,17 @@ function LogicRotationGame({ onCorrect, onWrong }) {
       <h2 className="text-3xl font-bold text-violet-600 mb-4">🔄 圖形旋轉</h2>
       <div className="bg-white rounded-3xl p-6 shadow-xl mb-3 border-4 border-violet-300">
         <p className="text-base text-gray-600 mb-2">這是原本的:</p>
-        <div className="text-9xl font-bold text-violet-700 leading-none">{target.char}</div>
+        <ShapeViz shape={target} color={color} size={120} />
       </div>
-      <p className="text-base text-gray-600 mb-3">哪個只是「轉過」?(不能是鏡像)</p>
+      <p className="text-base text-gray-600 mb-3">哪個只是「轉過」?<br/>(不能翻過去變鏡像)</p>
       <div className="grid grid-cols-2 gap-3">
         {opts.map(o => {
           const c = feedback?.id === o.id;
           let bg = 'bg-white hover:bg-violet-100';
           if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
           return (
-            <button key={o.id} onClick={() => pick(o)} className={`${bg} rounded-3xl p-5 shadow-md border-2 border-violet-200 transition`}>
-              <div className="text-7xl font-bold text-violet-700 leading-none inline-block" style={{ transform: o.transform, display: 'inline-block' }}>{o.char}</div>
+            <button key={o.id} onClick={() => pick(o)} className={`${bg} rounded-3xl p-4 shadow-md border-2 border-violet-200 transition`}>
+              <ShapeViz shape={o.shape} color={color} transform={o.transform} size={100} />
             </button>
           );
         })}
