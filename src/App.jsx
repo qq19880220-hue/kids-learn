@@ -674,6 +674,7 @@ export default function App() {
           { id: 'en-first', icon: '🔠', title: '選首字母', desc: '看圖找對應字母', color: 'from-teal-400 to-cyan-400' },
           { id: 'en-missing', icon: '🔡', title: '填中間字母', desc: 'd_g 是哪個?', color: 'from-cyan-400 to-blue-400' },
           { id: 'en-spell', icon: '✏️', title: '拼單字', desc: '把字母拼起來', color: 'from-yellow-400 to-orange-400' },
+          { id: 'en-read',  icon: '📖', title: '單純讀字', desc: '看到 cat → 選 🐱', color: 'from-emerald-400 to-teal-400' },
         ]} onStart={startGame} />}
 
         {/* 注音 */}
@@ -694,6 +695,7 @@ export default function App() {
         {screen === 'en-first' && <EnFirstLetterGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-missing' && <EnMissingLetterGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-spell' && <EnSpellGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} playSound={playSound} />}
+        {screen === 'en-read' && <EnReadGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} />}
 
         {/* 邏輯 / 空間 */}
         {screen === 'logic-pattern' && <LogicPatternGame onCorrect={onCorrect1} onWrong={onWrong} />}
@@ -2698,6 +2700,70 @@ function EnCategoryGame({ onCorrect, onWrong, speakEn }) {
   );
 }
 
+// ============ 英文:單純讀字(看字選圖,無中文提示) ============
+function EnReadGame({ onCorrect, onWrong, speakEn }) {
+  const [target, setTarget] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const sh = [...EN_WORDS].sort(() => Math.random() - 0.5);
+    const t = sh[0];
+    setTarget(t);
+    setOpts(sh.slice(0, 4).sort(() => Math.random() - 0.5));
+    setFeedback(null);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (w) => {
+    if (feedback) return;
+    if (w.word === target.word) {
+      setFeedback({ type: 'correct', w: w.word });
+      speakEn(w.word);
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1500);
+    } else {
+      setFeedback({ type: 'wrong', w: w.word });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  if (!target) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-emerald-600 mb-4">📖 單純讀字</h2>
+      <button onClick={() => speakEn(target.word)}
+        className="bg-white rounded-3xl p-6 shadow-xl mb-4 w-full hover:scale-105 transition border-4 border-emerald-300">
+        <div className="text-6xl md:text-7xl font-bold text-purple-700 lowercase tracking-wide">{target.word}</div>
+        <div className="text-sm text-emerald-500 mt-2 flex items-center justify-center gap-1">
+          <Volume2 className="w-4 h-4" />點我聽發音
+        </div>
+      </button>
+      <p className="text-lg text-gray-700 mb-3 font-bold">這個字是什麼?</p>
+      <div className="grid grid-cols-2 gap-3">
+        {opts.map((o, i) => {
+          const c = feedback?.w === o.word;
+          let bg = 'bg-white hover:bg-yellow-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={i} onClick={() => pick(o)}
+              className={`${bg} rounded-3xl p-4 shadow-xl border-4 border-emerald-200 transition`}>
+              <div className="text-6xl mb-1">{o.emoji}</div>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐⭐ {target.zh}</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">{target.word} 是 {target.emoji} {target.zh}</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
 // ============ 邏輯:找規律 ============
 function LogicPatternGame({ onCorrect, onWrong }) {
   const PATTERN_EMOJIS = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⭐', '❤️', '🌸', '🍎', '🔶', '⚪', '🌈', '💎'];
@@ -2784,63 +2850,91 @@ function LogicPatternGame({ onCorrect, onWrong }) {
   );
 }
 
-// ============ 邏輯:走迷宮(隨機產生,難度漸進) ============
-// 隨機走訪不重複格子,產生有效路徑
-function generateMaze(size, length) {
-  const DIRS = [['U', -1, 0], ['D', 1, 0], ['L', 0, -1], ['R', 0, 1]];
-  for (let attempt = 0; attempt < 60; attempt++) {
-    const sr = Math.floor(Math.random() * size);
-    const sc = Math.floor(Math.random() * size);
-    let r = sr, c = sc;
-    const visited = new Set([`${r},${c}`]);
-    const path = [];
-    let ok = true;
-    for (let i = 0; i < length; i++) {
-      const choices = DIRS.filter(([, dr, dc]) => {
-        const nr = r + dr, nc = c + dc;
-        return nr >= 0 && nr < size && nc >= 0 && nc < size && !visited.has(`${nr},${nc}`);
-      });
-      if (choices.length === 0) { ok = false; break; }
-      // 避免太多連續同方向,讓路徑曲折一點
-      let pool = choices;
-      if (path.length > 0) {
-        const last = path[path.length - 1];
-        const turning = choices.filter(([d]) => d !== last);
-        if (turning.length > 0 && Math.random() < 0.6) pool = turning;
-      }
-      const [d, dr, dc] = pool[Math.floor(Math.random() * pool.length)];
-      path.push(d);
+// ============ 邏輯:走迷宮(有牆,任何路徑都可以走) ============
+// Recursive backtracker(迭代式):產生完美迷宮,每兩格之間有唯一路徑
+function generateMazeWalls(size) {
+  const visited = Array.from({ length: size }, () => Array(size).fill(false));
+  const walls = Array.from({ length: size }, () =>
+    Array.from({ length: size }, () => ({ t: true, r: true, b: true, l: true }))
+  );
+  const stack = [[0, 0]];
+  visited[0][0] = true;
+  while (stack.length > 0) {
+    const [r, c] = stack[stack.length - 1];
+    const neighbours = [];
+    for (const [w, dr, dc, opp] of [['t', -1, 0, 'b'], ['r', 0, 1, 'l'], ['b', 1, 0, 't'], ['l', 0, -1, 'r']]) {
       const nr = r + dr, nc = c + dc;
-      visited.add(`${nr},${nc}`);
-      r = nr; c = nc;
+      if (nr >= 0 && nr < size && nc >= 0 && nc < size && !visited[nr][nc]) {
+        neighbours.push([w, nr, nc, opp]);
+      }
     }
-    if (ok) return { size, start: [sr, sc], path };
+    if (neighbours.length === 0) { stack.pop(); continue; }
+    const [w, nr, nc, opp] = neighbours[Math.floor(Math.random() * neighbours.length)];
+    walls[r][c][w] = false;
+    walls[nr][nc][opp] = false;
+    visited[nr][nc] = true;
+    stack.push([nr, nc]);
   }
-  return { size: 3, start: [0, 0], path: ['R', 'D'] };
+  return walls;
+}
+
+function shortestPathLen(walls, size, start, end) {
+  const dist = Array.from({ length: size }, () => Array(size).fill(-1));
+  dist[start[0]][start[1]] = 0;
+  const q = [start];
+  while (q.length > 0) {
+    const [r, c] = q.shift();
+    if (r === end[0] && c === end[1]) return dist[r][c];
+    for (const [w, dr, dc] of [['t', -1, 0], ['r', 0, 1], ['b', 1, 0], ['l', 0, -1]]) {
+      if (walls[r][c][w]) continue;
+      const nr = r + dr, nc = c + dc;
+      if (dist[nr][nc] === -1) {
+        dist[nr][nc] = dist[r][c] + 1;
+        q.push([nr, nc]);
+      }
+    }
+  }
+  return -1;
+}
+
+function generateMaze(size) {
+  // 多試幾次,確保最短路徑夠長(不會兩步就到)
+  const minPath = size + 1;
+  for (let i = 0; i < 10; i++) {
+    const walls = generateMazeWalls(size);
+    const corners = [[0, 0], [0, size - 1], [size - 1, 0], [size - 1, size - 1]];
+    const startIdx = Math.floor(Math.random() * 4);
+    const endIdx = (startIdx + 2) % 4;
+    const start = corners[startIdx];
+    const end = corners[endIdx];
+    const len = shortestPathLen(walls, size, start, end);
+    if (len >= minPath) return { size, walls, start, end, shortest: len };
+  }
+  const walls = generateMazeWalls(size);
+  return { size, walls, start: [0, 0], end: [size - 1, size - 1], shortest: shortestPathLen(walls, size, [0, 0], [size - 1, size - 1]) };
 }
 
 function LogicMazeGame({ onCorrect, onWrong, playSound }) {
-  const [maze, setMaze] = useState(() => generateMaze(3, 3));
-  const [stepIdx, setStepIdx] = useState(0);
+  const [maze, setMaze] = useState(() => generateMaze(3));
   const [pos, setPos] = useState([0, 0]);
   const [pet, setPet] = useState('🐶');
   const [goal, setGoal] = useState('🦴');
-  const [trail, setTrail] = useState([]);
+  const [trail, setTrail] = useState([[0, 0]]);
+  const [steps, setSteps] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [score, setScore] = useState(0);
 
   const newRound = () => {
-    // 漸進難度:答對越多越難
-    let size, length;
-    if (score < 3)       { size = 3; length = 3 + Math.floor(Math.random() * 3); }   // 3x3,3-5 步
-    else if (score < 7)  { size = 4; length = 5 + Math.floor(Math.random() * 4); }   // 4x4,5-8 步
-    else if (score < 12) { size = 4; length = 7 + Math.floor(Math.random() * 5); }   // 4x4,7-11 步
-    else                 { size = 5; length = 9 + Math.floor(Math.random() * 6); }   // 5x5,9-14 步
-    const m = generateMaze(size, length);
+    let size;
+    if (score < 3)       size = 3;
+    else if (score < 7)  size = 4;
+    else if (score < 12) size = 5;
+    else                 size = 6;
+    const m = generateMaze(size);
     setMaze(m);
     setPos(m.start);
-    setStepIdx(0);
     setTrail([m.start]);
+    setSteps(0);
     setFeedback(null);
     const pets = ['🐶', '🐱', '🐰', '🐻', '🐯', '🦁', '🐵', '🐧'];
     const goals = ['🦴', '🐟', '🥕', '🍯', '🍎', '🍌', '🍪', '🎂'];
@@ -2850,68 +2944,61 @@ function LogicMazeGame({ onCorrect, onWrong, playSound }) {
 
   useEffect(() => { newRound(); }, []);
 
-  // 計算目標位置(走完整路徑)
-  const computeEnd = () => {
-    let [r, c] = maze.start;
-    maze.path.forEach(d => {
-      if (d === 'U') r--; else if (d === 'D') r++; else if (d === 'L') c--; else c++;
-    });
-    return [r, c];
-  };
-  const end = computeEnd();
-
   const move = (dir) => {
-    if (feedback) return;
-    const expected = maze.path[stepIdx];
-    if (dir !== expected) {
-      setFeedback({ type: 'wrong' });
-      onWrong();
-      setTimeout(() => setFeedback(null), 900);
+    if (feedback?.type === 'correct') return;
+    const [r, c] = pos;
+    const wallKey = dir === 'U' ? 't' : dir === 'D' ? 'b' : dir === 'L' ? 'l' : 'r';
+    if (maze.walls[r][c][wallKey]) {
+      setFeedback({ type: 'blocked' });
+      setTimeout(() => setFeedback(null), 500);
       return;
     }
-    let [r, c] = pos;
-    if (dir === 'U') r--; else if (dir === 'D') r++; else if (dir === 'L') c--; else c++;
-    const newPos = [r, c];
-    setPos(newPos);
-    setTrail([...trail, newPos]);
+    let nr = r, nc = c;
+    if (dir === 'U') nr--; else if (dir === 'D') nr++; else if (dir === 'L') nc--; else nc++;
+    setPos([nr, nc]);
+    setTrail([...trail, [nr, nc]]);
+    setSteps(steps + 1);
     playSound('tap');
-    const ni = stepIdx + 1;
-    setStepIdx(ni);
-    if (ni === maze.path.length) {
-      // 抵達!
+    if (nr === maze.end[0] && nc === maze.end[1]) {
       setFeedback({ type: 'correct' });
       onCorrect();
       setTimeout(newRound, 1800);
     }
   };
 
-  const cellAt = (r, c) => {
-    if (r === pos[0] && c === pos[1]) return pet;
-    if (r === end[0] && c === end[1]) return goal;
-    if (trail.some(([tr, tc]) => tr === r && tc === c)) return '·';
-    return '';
+  const wallClass = (w) => {
+    const parts = [];
+    if (w.t) parts.push('border-t-4');
+    if (w.r) parts.push('border-r-4');
+    if (w.b) parts.push('border-b-4');
+    if (w.l) parts.push('border-l-4');
+    return parts.join(' ');
   };
+
+  const trailKeys = new Set(trail.map(([r, c]) => `${r},${c}`));
+  const cellSize = maze.size <= 4 ? 'w-14 h-14 md:w-16 md:h-16' : maze.size === 5 ? 'w-12 h-12 md:w-14 md:h-14' : 'w-10 h-10 md:w-12 md:h-12';
+  const textSize = maze.size <= 4 ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl';
 
   return (
     <div className="text-center">
-      <h2 className="text-3xl font-bold text-purple-600 mb-3">🐾 走迷宮</h2>
-      <p className="text-base text-gray-600 mb-3">帶 {pet} 走到 {goal}({stepIdx}/{maze.path.length} 步)</p>
-      <div className="bg-gradient-to-br from-green-200 to-lime-200 rounded-3xl p-4 mb-4 shadow-xl border-4 border-green-400 inline-block">
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${maze.size}, minmax(0, 1fr))` }}>
+      <h2 className="text-3xl font-bold text-purple-600 mb-2">🐾 走迷宮</h2>
+      <p className="text-sm text-gray-600 mb-2">帶 {pet} 找到 {goal} ── 走了 {steps} 步(最短 {maze.shortest})</p>
+      <div className="bg-amber-50 rounded-2xl p-2 mb-4 shadow-xl border-4 border-amber-400 inline-block">
+        <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${maze.size}, minmax(0, 1fr))` }}>
           {[...Array(maze.size * maze.size)].map((_, i) => {
             const r = Math.floor(i / maze.size);
             const c = i % maze.size;
-            const v = cellAt(r, c);
-            const isStart = r === maze.start[0] && c === maze.start[1];
-            const isEnd = r === end[0] && c === end[1];
+            const w = maze.walls[r][c];
             const isPet = r === pos[0] && c === pos[1];
+            const isEnd = r === maze.end[0] && c === maze.end[1];
+            const isTrail = trailKeys.has(`${r},${c}`) && !isPet;
             let bg = 'bg-white';
-            if (isPet) bg = 'bg-yellow-200 ring-4 ring-yellow-500';
+            if (isPet) bg = 'bg-yellow-200';
             else if (isEnd) bg = 'bg-pink-200';
-            else if (v === '·') bg = 'bg-yellow-100';
+            else if (isTrail) bg = 'bg-amber-100';
             return (
-              <div key={i} className={`${bg} w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center text-3xl md:text-4xl shadow border-2 border-green-300`}>
-                {v === '·' ? <span className="text-gray-400 text-2xl">·</span> : v}
+              <div key={i} className={`${bg} ${cellSize} ${textSize} ${wallClass(w)} border-amber-900 flex items-center justify-center transition`}>
+                {isPet ? pet : isEnd ? goal : (isTrail ? <span className="w-1.5 h-1.5 bg-amber-400 rounded-full" /> : '')}
               </div>
             );
           })}
@@ -2919,17 +3006,17 @@ function LogicMazeGame({ onCorrect, onWrong, playSound }) {
       </div>
       <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
         <div></div>
-        <button onClick={() => move('U')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬆</button>
+        <button onClick={() => move('U')} disabled={feedback?.type === 'correct'} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬆</button>
         <div></div>
-        <button onClick={() => move('L')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬅</button>
+        <button onClick={() => move('L')} disabled={feedback?.type === 'correct'} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬅</button>
         <button onClick={newRound} className="bg-gray-300 hover:bg-gray-400 rounded-2xl py-3 shadow-md text-sm font-bold flex items-center justify-center"><RefreshCw className="w-5 h-5" /></button>
-        <button onClick={() => move('R')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">➡</button>
+        <button onClick={() => move('R')} disabled={feedback?.type === 'correct'} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">➡</button>
         <div></div>
-        <button onClick={() => move('D')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬇</button>
+        <button onClick={() => move('D')} disabled={feedback?.type === 'correct'} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬇</button>
         <div></div>
       </div>
       {feedback?.type === 'correct' && <div className="mt-3 text-3xl font-bold text-green-600 animate-bounce">到達了!⭐⭐</div>}
-      {feedback?.type === 'wrong' && <div className="mt-3 text-xl font-bold text-red-500">那個方向不對 🙅</div>}
+      {feedback?.type === 'blocked' && <div className="mt-3 text-xl font-bold text-red-500">有牆擋住了 🧱</div>}
       <div className="mt-3 text-gray-600">答對:{score} 題</div>
     </div>
   );
