@@ -666,6 +666,7 @@ export default function App() {
           { id: 'logic-symmetry', icon: '🪞', title: '對稱配對',  desc: '左半邊 → 找鏡像',    color: 'from-pink-400 to-rose-400' },
           { id: 'logic-shadow',   icon: '🌑', title: '影子配對',  desc: '哪個影子是這個?',   color: 'from-indigo-400 to-purple-400' },
           { id: 'logic-rotation', icon: '🔄', title: '圖形旋轉',  desc: '哪個是轉過的同一個?', color: 'from-violet-400 to-fuchsia-400' },
+          { id: 'logic-matrix',   icon: '🎯', title: '找缺塊',    desc: '看 9 格找出缺的那個', color: 'from-rose-400 to-orange-400' },
         ]} onStart={startGame} />}
         {screen === 'en-menu' && <SubjectMenu title="🔤 英文遊戲" color="from-green-500 to-emerald-500" games={[
           { id: 'en-pick', icon: '🖼️', title: '看圖選字', desc: '哪個是正確的單字?', color: 'from-green-400 to-lime-400' },
@@ -702,6 +703,7 @@ export default function App() {
         {screen === 'logic-symmetry' && <LogicSymmetryGame onCorrect={onCorrect1} onWrong={onWrong} />}
         {screen === 'logic-shadow' && <LogicShadowGame onCorrect={onCorrect1} onWrong={onWrong} />}
         {screen === 'logic-rotation' && <LogicRotationGame onCorrect={onCorrect2} onWrong={onWrong} />}
+        {screen === 'logic-matrix' && <LogicMatrixGame onCorrect={onCorrect2} onWrong={onWrong} />}
 
         <style>{`
           @keyframes pop { 0% { transform: scale(0); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -3170,6 +3172,97 @@ function LogicRotationGame({ onCorrect, onWrong }) {
       </div>
       {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐⭐</div>}
       {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">那個是鏡像不是旋轉喔 🪞</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 邏輯:找缺塊(Raven's 簡化版,3x3 拉丁方陣) ============
+function LogicMatrixGame({ onCorrect, onWrong }) {
+  const POOL = ['🔴', '🟢', '🔵', '🟡', '🟣', '🟠', '⭐', '❤️', '🌸', '🍎', '💎', '🔶'];
+  const [grid, setGrid] = useState(null);
+  const [hidden, setHidden] = useState([2, 2]);
+  const [answer, setAnswer] = useState('');
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const shuffled = [...POOL].sort(() => Math.random() - 0.5);
+    const items = shuffled.slice(0, 3);
+    // 拉丁方陣:每列、每行都有三個不同的元素
+    const cyclic = (arr, n) => [...arr.slice(n), ...arr.slice(0, n)];
+    const newGrid = [cyclic(items, 0), cyclic(items, 1), cyclic(items, 2)];
+    // 隨機挑一格隱藏(60% 機率右下,其他隨機)
+    let hr = 2, hc = 2;
+    if (Math.random() > 0.6) {
+      hr = Math.floor(Math.random() * 3);
+      hc = Math.floor(Math.random() * 3);
+    }
+    const ans = newGrid[hr][hc];
+    // 4 選項:正解 + 3 干擾(從 pool 其他元素抽)
+    const others = shuffled.filter(e => e !== ans).slice(0, 3);
+    setGrid(newGrid);
+    setHidden([hr, hc]);
+    setAnswer(ans);
+    setOpts([ans, ...others].sort(() => Math.random() - 0.5));
+    setFeedback(null);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (e) => {
+    if (feedback) return;
+    if (e === answer) {
+      setFeedback({ type: 'correct', e });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1400);
+    } else {
+      setFeedback({ type: 'wrong', e });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  if (!grid) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-rose-600 mb-3">🎯 找缺塊</h2>
+      <p className="text-sm text-gray-600 mb-3">每一<b>列</b>、每一<b>行</b>都要有 3 種不同的</p>
+      <div className="bg-white rounded-3xl p-4 shadow-xl mb-4 border-4 border-rose-300 inline-block">
+        <div className="grid grid-cols-3 gap-2">
+          {grid.flatMap((row, r) => row.map((cell, c) => {
+            const isHidden = r === hidden[0] && c === hidden[1];
+            const showAns = isHidden && feedback?.type === 'correct';
+            return (
+              <div key={`${r}-${c}`}
+                className={`w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center text-4xl md:text-5xl shadow ${
+                  isHidden
+                    ? (showAns ? 'bg-green-200 border-4 border-green-500' : 'bg-yellow-100 border-4 border-dashed border-yellow-500')
+                    : 'bg-gray-50 border-2 border-gray-200'
+                }`}>
+                {isHidden && !showAns ? <span className="text-yellow-600 font-bold text-3xl">?</span> : cell}
+              </div>
+            );
+          }))}
+        </div>
+      </div>
+      <p className="text-base text-gray-600 mb-3">❓ 應該是哪個?</p>
+      <div className="grid grid-cols-4 gap-2">
+        {opts.map((e, i) => {
+          const c = feedback?.e === e;
+          let bg = 'bg-white hover:bg-rose-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={i} onClick={() => pick(e)} className={`${bg} rounded-2xl p-4 shadow-md border-2 border-rose-200 transition`}>
+              <span className="text-5xl">{e}</span>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">再看看每列每行的規律 🧐</div>}
       <div className="mt-3 text-gray-600">答對:{score} 題</div>
     </div>
   );
