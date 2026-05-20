@@ -856,10 +856,9 @@ function UserSetupScreen({ onCreate, onCancel }) {
               <button
                 key={key}
                 onClick={() => pickPetType(key)}
-                className={`bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-3 shadow-xl border-4 border-white`}
+                className={`bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-4 shadow-xl border-4 border-white`}
               >
-                <PetVisual type={key} size="md" float={true} />
-                <div className="text-xl font-bold text-white drop-shadow mt-1">{pet.name}</div>
+                <PetVisual type={key} size="lg" float={true} />
               </button>
             ))}
           </div>
