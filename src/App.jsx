@@ -240,29 +240,38 @@ function PetVisual({ type, clothes, toy, feedingEmoji, size = 'md', float = true
   );
 }
 
+// 商店物品(emoji 當 fallback,image 是 Fluent Emoji 3D 圖檔)
 const SHOP_ITEMS = {
   food: [
-    { id: 'food_bone',    emoji: '🦴', name: '骨頭',   cost: 3 },
-    { id: 'food_cookie',  emoji: '🍪', name: '餅乾',   cost: 5 },
-    { id: 'food_meat',    emoji: '🥩', name: '肉肉',   cost: 10 },
-    { id: 'food_chicken', emoji: '🍗', name: '雞腿',   cost: 15 },
-    { id: 'food_cake',    emoji: '🎂', name: '蛋糕',   cost: 25 },
+    { id: 'food_bone',    emoji: '🦴', image: '/shop/food_bone.png',    name: '骨頭',   cost: 3 },
+    { id: 'food_cookie',  emoji: '🍪', image: '/shop/food_cookie.png',  name: '餅乾',   cost: 5 },
+    { id: 'food_meat',    emoji: '🥩', image: '/shop/food_meat.png',    name: '肉肉',   cost: 10 },
+    { id: 'food_chicken', emoji: '🍗', image: '/shop/food_chicken.png', name: '雞腿',   cost: 15 },
+    { id: 'food_cake',    emoji: '🎂', image: '/shop/food_cake.png',    name: '蛋糕',   cost: 25 },
   ],
   clothes: [
-    { id: 'cloth_bow',     emoji: '🎀', name: '蝴蝶結',  cost: 20 },
-    { id: 'cloth_hat',     emoji: '🎩', name: '紳士帽',  cost: 40 },
-    { id: 'cloth_glasses', emoji: '🕶️', name: '太陽眼鏡', cost: 60 },
-    { id: 'cloth_crown',   emoji: '👑', name: '王冠',    cost: 80 },
-    { id: 'cloth_grad',    emoji: '🎓', name: '博士帽',  cost: 100 },
+    { id: 'cloth_bow',     emoji: '🎀', image: '/shop/cloth_bow.png',     name: '蝴蝶結',  cost: 20 },
+    { id: 'cloth_hat',     emoji: '🎩', image: '/shop/cloth_hat.png',     name: '紳士帽',  cost: 40 },
+    { id: 'cloth_glasses', emoji: '🕶️', image: '/shop/cloth_glasses.png', name: '太陽眼鏡', cost: 60 },
+    { id: 'cloth_crown',   emoji: '👑', image: '/shop/cloth_crown.png',   name: '王冠',    cost: 80 },
+    { id: 'cloth_grad',    emoji: '🎓', image: '/shop/cloth_grad.png',    name: '博士帽',  cost: 100 },
   ],
   toys: [
-    { id: 'toy_ball',       emoji: '🎾', name: '網球',      cost: 15 },
-    { id: 'toy_yoyo',       emoji: '🪀', name: '溜溜球',    cost: 25 },
-    { id: 'toy_teddy',      emoji: '🧸', name: '小熊娃娃',  cost: 30 },
-    { id: 'toy_skateboard', emoji: '🛼', name: '滑板',      cost: 50 },
-    { id: 'toy_rocket',     emoji: '🚀', name: '火箭',      cost: 80 },
+    { id: 'toy_ball',       emoji: '⚽', image: '/shop/toy_ball.png',       name: '足球',      cost: 15 },
+    { id: 'toy_yoyo',       emoji: '🪀', image: '/shop/toy_yoyo.png',       name: '溜溜球',    cost: 25 },
+    { id: 'toy_teddy',      emoji: '🧸', image: '/shop/toy_teddy.png',      name: '小熊娃娃',  cost: 30 },
+    { id: 'toy_skateboard', emoji: '🛼', image: '/shop/toy_skateboard.png', name: '溜冰鞋',    cost: 50 },
+    { id: 'toy_rocket',     emoji: '🚀', image: '/shop/toy_rocket.png',     name: '火箭',      cost: 80 },
   ],
 };
+
+// 商品圖渲染(有 image 用圖,沒有 fallback emoji)
+function ShopItemVisual({ item, sizeClass = 'w-16 h-16' }) {
+  if (!item) return null;
+  return item.image
+    ? <img src={item.image} alt={item.name} className={`${sizeClass} object-contain inline-block`} draggable="false" />
+    : <span className="text-5xl">{item.emoji}</span>;
+}
 
 const findItem = (category, id) => SHOP_ITEMS[category]?.find(i => i.id === id);
 
@@ -565,6 +574,7 @@ export default function App() {
     if (screen.startsWith('zhuyin-') && screen !== 'zhuyin-menu') setScreen('zhuyin-menu');
     else if (screen.startsWith('math-') && screen !== 'math-menu') setScreen('math-menu');
     else if (screen.startsWith('en-') && screen !== 'en-menu') setScreen('en-menu');
+    else if (screen.startsWith('logic-') && screen !== 'logic-menu') setScreen('logic-menu');
     else if (screen === 'pet-shop') setScreen('pet-home');
     else if (screen === 'user-setup' && appData.users.length > 0) setScreen('user-select');
     else setScreen('home');
@@ -650,6 +660,13 @@ export default function App() {
           { id: 'math-compare', icon: '⚖️', title: '比大小', desc: '哪個比較大?', color: 'from-teal-400 to-green-400' },
           { id: 'math-fruit', icon: '🍎', title: '採水果湊數字', desc: '採出指定的總和', color: 'from-green-400 to-blue-400' },
         ]} onStart={startGame} />}
+        {screen === 'logic-menu' && <SubjectMenu title="🧩 邏輯遊戲" color="from-fuchsia-500 to-purple-600" games={[
+          { id: 'logic-pattern',  icon: '🔁', title: '找規律',    desc: '🔴🔵🔴🔵🔴 ?',     color: 'from-fuchsia-400 to-pink-400' },
+          { id: 'logic-maze',     icon: '🐾', title: '走迷宮',    desc: '帶 🐶 去找 🦴',      color: 'from-purple-400 to-indigo-400' },
+          { id: 'logic-symmetry', icon: '🪞', title: '對稱配對',  desc: '左半邊 → 找鏡像',    color: 'from-pink-400 to-rose-400' },
+          { id: 'logic-shadow',   icon: '🌑', title: '影子配對',  desc: '哪個影子是這個?',   color: 'from-indigo-400 to-purple-400' },
+          { id: 'logic-rotation', icon: '🔄', title: '圖形旋轉',  desc: '哪個是轉過的同一個?', color: 'from-violet-400 to-fuchsia-400' },
+        ]} onStart={startGame} />}
         {screen === 'en-menu' && <SubjectMenu title="🔤 英文遊戲" color="from-green-500 to-emerald-500" games={[
           { id: 'en-pick', icon: '🖼️', title: '看圖選字', desc: '哪個是正確的單字?', color: 'from-green-400 to-lime-400' },
           { id: 'en-listen', icon: '👂', title: '聽音選圖', desc: '聽英文選圖片', color: 'from-lime-400 to-yellow-400' },
@@ -678,6 +695,13 @@ export default function App() {
         {screen === 'en-missing' && <EnMissingLetterGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-spell' && <EnSpellGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} playSound={playSound} />}
         {screen === 'en-cat' && <EnCategoryGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
+
+        {/* 邏輯 / 空間 */}
+        {screen === 'logic-pattern' && <LogicPatternGame onCorrect={onCorrect1} onWrong={onWrong} />}
+        {screen === 'logic-maze' && <LogicMazeGame onCorrect={onCorrect2} onWrong={onWrong} playSound={playSound} />}
+        {screen === 'logic-symmetry' && <LogicSymmetryGame onCorrect={onCorrect1} onWrong={onWrong} />}
+        {screen === 'logic-shadow' && <LogicShadowGame onCorrect={onCorrect1} onWrong={onWrong} />}
+        {screen === 'logic-rotation' && <LogicRotationGame onCorrect={onCorrect2} onWrong={onWrong} />}
 
         <style>{`
           @keyframes pop { 0% { transform: scale(0); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -740,21 +764,26 @@ function HomeScreen({ user, stars, petData, onPick, onSwitchUser }) {
         </button>
       )}
 
-      <div className="grid md:grid-cols-3 gap-3">
-        <button onClick={() => onPick('zhuyin-menu')} className="bg-gradient-to-br from-pink-400 to-purple-500 hover:scale-105 transition transform text-white rounded-3xl p-6 shadow-xl">
-          <div className="text-6xl mb-2">🎯</div>
-          <div className="text-2xl font-bold mb-1">注音</div>
-          <div className="text-sm opacity-90">ㄅㄆㄇㄈ</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button onClick={() => onPick('zhuyin-menu')} className="bg-gradient-to-br from-pink-400 to-purple-500 hover:scale-105 transition transform text-white rounded-3xl p-5 shadow-xl">
+          <div className="text-5xl mb-1">🎯</div>
+          <div className="text-xl font-bold mb-1">注音</div>
+          <div className="text-xs opacity-90">ㄅㄆㄇㄈ</div>
         </button>
-        <button onClick={() => onPick('math-menu')} className="bg-gradient-to-br from-blue-400 to-cyan-500 hover:scale-105 transition transform text-white rounded-3xl p-6 shadow-xl">
-          <div className="text-6xl mb-2">🔢</div>
-          <div className="text-2xl font-bold mb-1">數學</div>
-          <div className="text-sm opacity-90">+ − &lt; &gt;</div>
+        <button onClick={() => onPick('math-menu')} className="bg-gradient-to-br from-blue-400 to-cyan-500 hover:scale-105 transition transform text-white rounded-3xl p-5 shadow-xl">
+          <div className="text-5xl mb-1">🔢</div>
+          <div className="text-xl font-bold mb-1">數學</div>
+          <div className="text-xs opacity-90">+ − &lt; &gt;</div>
         </button>
-        <button onClick={() => onPick('en-menu')} className="bg-gradient-to-br from-green-400 to-emerald-500 hover:scale-105 transition transform text-white rounded-3xl p-6 shadow-xl">
-          <div className="text-6xl mb-2">🔤</div>
-          <div className="text-2xl font-bold mb-1">英文</div>
-          <div className="text-sm opacity-90">ABC abc</div>
+        <button onClick={() => onPick('en-menu')} className="bg-gradient-to-br from-green-400 to-emerald-500 hover:scale-105 transition transform text-white rounded-3xl p-5 shadow-xl">
+          <div className="text-5xl mb-1">🔤</div>
+          <div className="text-xl font-bold mb-1">英文</div>
+          <div className="text-xs opacity-90">ABC abc</div>
+        </button>
+        <button onClick={() => onPick('logic-menu')} className="bg-gradient-to-br from-fuchsia-400 to-purple-600 hover:scale-105 transition transform text-white rounded-3xl p-5 shadow-xl">
+          <div className="text-5xl mb-1">🧩</div>
+          <div className="text-xl font-bold mb-1">邏輯</div>
+          <div className="text-xs opacity-90">規律 / 空間</div>
         </button>
       </div>
 
@@ -1126,7 +1155,7 @@ function PetHomeScreen({ user, petData, onShop, onEquip, onFeed, feedingItem }) 
                     onClick={() => onFeed(id)}
                     className="bg-yellow-50 hover:bg-yellow-100 rounded-2xl p-3 shadow-md border-2 border-yellow-200 active:scale-95 transition"
                   >
-                    <div className="text-4xl mb-1">{item.emoji}</div>
+                    <ShopItemVisual item={item} sizeClass="w-14 h-14" />
                     <div className="text-xs text-gray-600 font-bold">{item.name}</div>
                     <div className="text-xs text-orange-600 font-bold">x {count}</div>
                   </button>
@@ -1154,7 +1183,7 @@ function PetHomeScreen({ user, petData, onShop, onEquip, onFeed, feedingItem }) 
                       equipped ? 'bg-purple-200 border-purple-400 ring-2 ring-purple-400' : 'bg-pink-50 hover:bg-pink-100 border-pink-200'
                     }`}
                   >
-                    <div className="text-4xl mb-1">{item.emoji}</div>
+                    <ShopItemVisual item={item} sizeClass="w-14 h-14" />
                     <div className="text-xs text-gray-600 font-bold">{item.name}</div>
                     {equipped && <div className="text-xs text-purple-600 font-bold">穿著中</div>}
                   </button>
@@ -1182,7 +1211,7 @@ function PetHomeScreen({ user, petData, onShop, onEquip, onFeed, feedingItem }) 
                       equipped ? 'bg-green-200 border-green-400 ring-2 ring-green-400' : 'bg-blue-50 hover:bg-blue-100 border-blue-200'
                     }`}
                   >
-                    <div className="text-4xl mb-1">{item.emoji}</div>
+                    <ShopItemVisual item={item} sizeClass="w-14 h-14" />
                     <div className="text-xs text-gray-600 font-bold">{item.name}</div>
                     {equipped && <div className="text-xs text-green-600 font-bold">在玩</div>}
                   </button>
@@ -1272,8 +1301,8 @@ function PetShopScreen({ stars, petData, onBuy }) {
               disabled={owned}
               className={`${cls} rounded-2xl p-4 shadow-md border-2 border-amber-200 transition transform active:scale-95 disabled:cursor-not-allowed`}
             >
-              <div className="text-5xl mb-2">{item.emoji}</div>
-              <div className="font-bold text-gray-700 mb-1">{item.name}</div>
+              <ShopItemVisual item={item} sizeClass="w-20 h-20" />
+              <div className="font-bold text-gray-700 mb-1 mt-1">{item.name}</div>
               {owned ? (
                 <div className="text-sm text-gray-500 font-bold">已擁有 ✓</div>
               ) : (
@@ -2665,6 +2694,407 @@ function EnCategoryGame({ onCorrect, onWrong, speakEn }) {
       </div>
       {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐</div>}
       {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">{target.word} 是 {EN_CATEGORIES[target.cat].emoji} {EN_CATEGORIES[target.cat].label} 喔!</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 邏輯:找規律 ============
+function LogicPatternGame({ onCorrect, onWrong }) {
+  const PATTERN_EMOJIS = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⭐', '❤️', '🌸', '🍎'];
+  const [sequence, setSequence] = useState([]);
+  const [answer, setAnswer] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    // 從 emojis 隨機挑 2-3 個作為模式
+    const pool = [...PATTERN_EMOJIS].sort(() => Math.random() - 0.5);
+    const types = [
+      () => { const [a, b] = pool; return { pat: [a, b, a, b, a, b], next: b, all: [a, b] }; }, // ABABAB
+      () => { const [a, b] = pool; return { pat: [a, a, b, b, a, a], next: b, all: [a, b] }; }, // AABBAA
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, a, b, c], next: a, all: [a, b, c] }; }, // ABCABC
+      () => { const [a, b] = pool; return { pat: [a, b, b, a, b, b], next: a, all: [a, b] }; }, // ABBABB
+      () => { const [a, b] = pool; return { pat: [a, a, b, a, a, b], next: a, all: [a, b] }; }, // AABAAB
+    ];
+    const { pat, next, all } = types[Math.floor(Math.random() * types.length)]();
+    // 干擾選項
+    const dist = new Set();
+    all.forEach(x => x !== next && dist.add(x));
+    while (dist.size < 3) {
+      const x = PATTERN_EMOJIS[Math.floor(Math.random() * PATTERN_EMOJIS.length)];
+      if (x !== next) dist.add(x);
+    }
+    setSequence(pat);
+    setAnswer(next);
+    setOpts([next, ...Array.from(dist).slice(0, 3)].sort(() => Math.random() - 0.5));
+    setFeedback(null);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (e) => {
+    if (feedback) return;
+    if (e === answer) {
+      setFeedback({ type: 'correct', e });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1300);
+    } else {
+      setFeedback({ type: 'wrong', e });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-fuchsia-600 mb-4">🔁 找規律</h2>
+      <div className="bg-white rounded-3xl p-4 shadow-xl mb-4 border-4 border-fuchsia-300">
+        <p className="text-base text-gray-600 mb-2">接下來是哪一個?</p>
+        <div className="flex items-center justify-center gap-1 flex-wrap text-5xl md:text-6xl">
+          {sequence.map((e, i) => <span key={i}>{e}</span>)}
+          <span className="bg-yellow-200 rounded-2xl px-3 py-1 border-4 border-yellow-400 font-bold text-fuchsia-600 mx-1">?</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {opts.map((e, i) => {
+          const c = feedback?.e === e;
+          let bg = 'bg-white hover:bg-yellow-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={i} onClick={() => pick(e)} className={`${bg} rounded-2xl p-4 shadow-md border-2 border-fuchsia-200 transition`}>
+              <span className="text-5xl">{e}</span>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">再看看規律 🤔</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 邏輯:走迷宮(方向選擇逐步前進) ============
+function LogicMazeGame({ onCorrect, onWrong, playSound }) {
+  // 預先設計的小迷宮:每關用方向序列表示正解路徑
+  // 同時 start/end 顯示在 3x3 ~ 4x4 格子裡
+  const MAZES = [
+    { size: 3, start: [0, 0], path: ['R', 'D', 'R', 'D'] },
+    { size: 3, start: [0, 0], path: ['D', 'R', 'D', 'R'] },
+    { size: 3, start: [2, 0], path: ['U', 'U', 'R', 'R', 'D', 'D'] },
+    { size: 4, start: [0, 0], path: ['R', 'D', 'D', 'R', 'R', 'D'] },
+    { size: 4, start: [0, 0], path: ['D', 'R', 'R', 'D', 'D', 'R'] },
+    { size: 4, start: [3, 0], path: ['U', 'R', 'U', 'R', 'D', 'R', 'D'] },
+    { size: 4, start: [0, 3], path: ['D', 'L', 'D', 'L', 'D', 'L'] },
+  ];
+
+  const [maze, setMaze] = useState(MAZES[0]);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [pos, setPos] = useState([0, 0]);
+  const [pet, setPet] = useState('🐶');
+  const [goal, setGoal] = useState('🦴');
+  const [trail, setTrail] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const m = MAZES[Math.floor(Math.random() * MAZES.length)];
+    setMaze(m);
+    setPos(m.start);
+    setStepIdx(0);
+    setTrail([m.start]);
+    setFeedback(null);
+    const pets = ['🐶', '🐱', '🐰', '🐻'];
+    const goals = ['🦴', '🐟', '🥕', '🍯'];
+    setPet(pets[Math.floor(Math.random() * pets.length)]);
+    setGoal(goals[Math.floor(Math.random() * goals.length)]);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  // 計算目標位置(走完整路徑)
+  const computeEnd = () => {
+    let [r, c] = maze.start;
+    maze.path.forEach(d => {
+      if (d === 'U') r--; else if (d === 'D') r++; else if (d === 'L') c--; else c++;
+    });
+    return [r, c];
+  };
+  const end = computeEnd();
+
+  const move = (dir) => {
+    if (feedback) return;
+    const expected = maze.path[stepIdx];
+    if (dir !== expected) {
+      setFeedback({ type: 'wrong' });
+      onWrong();
+      setTimeout(() => setFeedback(null), 900);
+      return;
+    }
+    let [r, c] = pos;
+    if (dir === 'U') r--; else if (dir === 'D') r++; else if (dir === 'L') c--; else c++;
+    const newPos = [r, c];
+    setPos(newPos);
+    setTrail([...trail, newPos]);
+    playSound('tap');
+    const ni = stepIdx + 1;
+    setStepIdx(ni);
+    if (ni === maze.path.length) {
+      // 抵達!
+      setFeedback({ type: 'correct' });
+      onCorrect();
+      setTimeout(newRound, 1800);
+    }
+  };
+
+  const cellAt = (r, c) => {
+    if (r === pos[0] && c === pos[1]) return pet;
+    if (r === end[0] && c === end[1]) return goal;
+    if (trail.some(([tr, tc]) => tr === r && tc === c)) return '·';
+    return '';
+  };
+
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-purple-600 mb-3">🐾 走迷宮</h2>
+      <p className="text-base text-gray-600 mb-3">帶 {pet} 走到 {goal}({stepIdx}/{maze.path.length} 步)</p>
+      <div className="bg-gradient-to-br from-green-200 to-lime-200 rounded-3xl p-4 mb-4 shadow-xl border-4 border-green-400 inline-block">
+        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${maze.size}, minmax(0, 1fr))` }}>
+          {[...Array(maze.size * maze.size)].map((_, i) => {
+            const r = Math.floor(i / maze.size);
+            const c = i % maze.size;
+            const v = cellAt(r, c);
+            const isStart = r === maze.start[0] && c === maze.start[1];
+            const isEnd = r === end[0] && c === end[1];
+            const isPet = r === pos[0] && c === pos[1];
+            let bg = 'bg-white';
+            if (isPet) bg = 'bg-yellow-200 ring-4 ring-yellow-500';
+            else if (isEnd) bg = 'bg-pink-200';
+            else if (v === '·') bg = 'bg-yellow-100';
+            return (
+              <div key={i} className={`${bg} w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center text-3xl md:text-4xl shadow border-2 border-green-300`}>
+                {v === '·' ? <span className="text-gray-400 text-2xl">·</span> : v}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+        <div></div>
+        <button onClick={() => move('U')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬆</button>
+        <div></div>
+        <button onClick={() => move('L')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬅</button>
+        <button onClick={newRound} className="bg-gray-300 hover:bg-gray-400 rounded-2xl py-3 shadow-md text-sm font-bold flex items-center justify-center"><RefreshCw className="w-5 h-5" /></button>
+        <button onClick={() => move('R')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">➡</button>
+        <div></div>
+        <button onClick={() => move('D')} disabled={!!feedback} className="bg-purple-300 hover:bg-purple-400 rounded-2xl py-3 shadow-md font-bold text-3xl disabled:opacity-50">⬇</button>
+        <div></div>
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-3 text-3xl font-bold text-green-600 animate-bounce">到達了!⭐⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-3 text-xl font-bold text-red-500">那個方向不對 🙅</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 邏輯:對稱配對(找鏡像) ============
+function LogicSymmetryGame({ onCorrect, onWrong }) {
+  // 用 emoji + CSS 鏡像。題目是「找出這隻的鏡像」
+  const SYMMETRY_EMOJIS = ['🦋', '🌸', '⭐', '❤️', '🍀', '☘️', '🌟', '✨', '🦒', '🐢', '🦔'];
+  const TRANSFORMS = [
+    { id: 'normal',   style: {} },
+    { id: 'mirrorH',  style: { transform: 'scaleX(-1)' } },
+    { id: 'mirrorV',  style: { transform: 'scaleY(-1)' } },
+    { id: 'rotate90', style: { transform: 'rotate(90deg)' } },
+  ];
+  const [target, setTarget] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const t = SYMMETRY_EMOJIS[Math.floor(Math.random() * SYMMETRY_EMOJIS.length)];
+    // 4 個選項:鏡像版 + 其他 3 個變化(正常 / 上下翻 / 旋轉)
+    const shuffled = TRANSFORMS.slice().sort(() => Math.random() - 0.5);
+    setTarget(t);
+    setOpts(shuffled);
+    setFeedback(null);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (id) => {
+    if (feedback) return;
+    if (id === 'mirrorH') {
+      setFeedback({ type: 'correct', id });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1300);
+    } else {
+      setFeedback({ type: 'wrong', id });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  if (!target) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-pink-600 mb-4">🪞 對稱配對</h2>
+      <div className="bg-white rounded-3xl p-4 shadow-xl mb-3 border-4 border-pink-300 inline-flex items-center justify-center gap-6">
+        <span className="text-8xl">{target}</span>
+        <div className="text-5xl text-gray-400">|</div>
+        <span className="text-7xl text-gray-300">?</span>
+      </div>
+      <p className="text-base text-gray-600 mb-3">把它放鏡子前 → 哪個是鏡子裡的樣子?</p>
+      <div className="grid grid-cols-2 gap-3">
+        {opts.map(o => {
+          const c = feedback?.id === o.id;
+          let bg = 'bg-white hover:bg-pink-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={o.id} onClick={() => pick(o.id)} className={`${bg} rounded-3xl p-5 shadow-md border-2 border-pink-200 transition`}>
+              <span className="text-7xl inline-block" style={o.style}>{target}</span>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">想像把它翻過來 🪞</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 邏輯:影子配對 ============
+function LogicShadowGame({ onCorrect, onWrong }) {
+  const SHADOW_EMOJIS = ['🐰', '🐶', '🐱', '🐢', '🐸', '🦁', '🐯', '🐻', '🦒', '🐘', '🐧', '🐦', '🦋', '🐳', '🐙'];
+  const [target, setTarget] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const shuffled = [...SHADOW_EMOJIS].sort(() => Math.random() - 0.5);
+    const t = shuffled[0];
+    const choices = shuffled.slice(0, 4);
+    setTarget(t);
+    setOpts(choices.sort(() => Math.random() - 0.5));
+    setFeedback(null);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (e) => {
+    if (feedback) return;
+    if (e === target) {
+      setFeedback({ type: 'correct', e });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1200);
+    } else {
+      setFeedback({ type: 'wrong', e });
+      onWrong();
+      setTimeout(() => setFeedback(null), 900);
+    }
+  };
+
+  if (!target) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-indigo-600 mb-4">🌑 影子配對</h2>
+      <div className="bg-white rounded-3xl p-5 shadow-xl mb-3 border-4 border-indigo-300">
+        <p className="text-base text-gray-600 mb-2">這是誰?</p>
+        <span className="text-8xl">{target}</span>
+      </div>
+      <p className="text-base text-gray-600 mb-3">點哪個影子才對?</p>
+      <div className="grid grid-cols-2 gap-3">
+        {opts.map((e, i) => {
+          const c = feedback?.e === e;
+          let bg = 'bg-gray-100 hover:bg-gray-200';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={i} onClick={() => pick(e)} className={`${bg} rounded-3xl p-5 shadow-md border-2 border-indigo-200 transition`}>
+              <span className="text-7xl inline-block" style={{ filter: 'brightness(0)', opacity: 0.85 }}>{e}</span>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">再看看輪廓 👀</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 邏輯:圖形旋轉 ============
+function LogicRotationGame({ onCorrect, onWrong }) {
+  // 用不對稱字母:F, P, R, J, L, b, d, q, p, h, k(視覺有方向感)
+  const ROTATION_CHARS = ['F', 'P', 'R', 'J', 'L', 'h', 'q', 'b'];
+  const ANGLES = [0, 90, 180, 270];
+  const [target, setTarget] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const ch = ROTATION_CHARS[Math.floor(Math.random() * ROTATION_CHARS.length)];
+    // 正確的:同一個字母旋轉某個角度
+    const correctAngle = ANGLES[1 + Math.floor(Math.random() * 3)]; // 90/180/270
+    // 干擾:鏡像版本(scaleX(-1))也可能轉過,但本質上不同
+    const choices = [
+      { id: 'rot', char: ch, transform: `rotate(${correctAngle}deg)`, isAnswer: true },
+      { id: 'mirror', char: ch, transform: `scaleX(-1) rotate(${correctAngle}deg)`, isAnswer: false },
+      { id: 'mirrorV', char: ch, transform: `scaleY(-1)`, isAnswer: false },
+      { id: 'rotOther', char: ch, transform: `rotate(${(correctAngle + 180) % 360}deg) scaleX(-1)`, isAnswer: false },
+    ];
+    setTarget({ char: ch });
+    setOpts(choices.sort(() => Math.random() - 0.5));
+    setFeedback(null);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (opt) => {
+    if (feedback) return;
+    if (opt.isAnswer) {
+      setFeedback({ type: 'correct', id: opt.id });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1400);
+    } else {
+      setFeedback({ type: 'wrong', id: opt.id });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  if (!target) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-violet-600 mb-4">🔄 圖形旋轉</h2>
+      <div className="bg-white rounded-3xl p-6 shadow-xl mb-3 border-4 border-violet-300">
+        <p className="text-base text-gray-600 mb-2">這是原本的:</p>
+        <div className="text-9xl font-bold text-violet-700 leading-none">{target.char}</div>
+      </div>
+      <p className="text-base text-gray-600 mb-3">哪個只是「轉過」?(不能是鏡像)</p>
+      <div className="grid grid-cols-2 gap-3">
+        {opts.map(o => {
+          const c = feedback?.id === o.id;
+          let bg = 'bg-white hover:bg-violet-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={o.id} onClick={() => pick(o)} className={`${bg} rounded-3xl p-5 shadow-md border-2 border-violet-200 transition`}>
+              <div className="text-7xl font-bold text-violet-700 leading-none inline-block" style={{ transform: o.transform, display: 'inline-block' }}>{o.char}</div>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">那個是鏡像不是旋轉喔 🪞</div>}
       <div className="mt-3 text-gray-600">答對:{score} 題</div>
     </div>
   );
