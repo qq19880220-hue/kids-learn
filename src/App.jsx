@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Star, Home, Volume2, Trophy, RefreshCw, ArrowLeft } from 'lucide-react';
 import * as Tone from 'tone';
+import { loadFamily, saveFamily, subscribeFamily, generateFamilyCode } from './firebase';
 
 // ============ 資料 ============
 const ZHUYIN_DATA = [
@@ -184,15 +185,25 @@ const DEFAULT_PET_DATA = {
 export default function App() {
   const [screen, setScreen] = useState('home');
   const [appData, setAppData] = useState({ users: [], currentUserId: null });
+  const [familyCode, setFamilyCode] = useState(null);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'error'
   const [synthReady, setSynthReady] = useState(false);
   const [feedingItem, setFeedingItem] = useState(null);
   const synthRef = useRef(null);
+  const lastWriteAtRef = useRef(0);  // 用來偵測 Firestore 回音
+  const writeTimerRef = useRef(null); // 寫入防抖
 
   const currentUser = appData.users.find(u => u.id === appData.currentUserId);
   const stars = currentUser?.stars || 0;
   const petData = currentUser?.pet || DEFAULT_PET_DATA;
 
   useEffect(() => {
+    // 載入家庭代碼
+    try {
+      const code = localStorage.getItem('family_code');
+      if (code) setFamilyCode(code);
+    } catch (e) {}
+
     // 1) 新格式
     try {
       const raw = localStorage.getItem('app_data');
@@ -245,13 +256,74 @@ export default function App() {
       }
     } catch (e) {}
 
-    // 3) 全新
-    setScreen('user-setup');
+    // 3) 全新 → 進入選擇/配對畫面(可以新增玩家或用代碼連結現有家庭)
+    setScreen('user-select');
   }, []);
 
   const saveAppData = (next) => {
     setAppData(next);
     try { localStorage.setItem('app_data', JSON.stringify(next)); } catch (e) {}
+  };
+
+  // 訂閱 Firestore 變動
+  useEffect(() => {
+    if (!familyCode) return;
+    const unsub = subscribeFamily(familyCode, (remote) => {
+      if (!remote || !Array.isArray(remote.users)) return;
+      const remoteTime = remote.updatedAt || 0;
+      if (remoteTime <= lastWriteAtRef.current) return; // 跳過自己的回音
+      lastWriteAtRef.current = remoteTime;
+      setAppData(prev => {
+        const next = { users: remote.users, currentUserId: prev.currentUserId };
+        try { localStorage.setItem('app_data', JSON.stringify(next)); } catch (e) {}
+        return next;
+      });
+    });
+    return unsub;
+  }, [familyCode]);
+
+  // 寫入 Firestore(防抖 600ms)
+  useEffect(() => {
+    if (!familyCode || !appData.users || appData.users.length === 0) return;
+    if (writeTimerRef.current) clearTimeout(writeTimerRef.current);
+    writeTimerRef.current = setTimeout(async () => {
+      const t = Date.now();
+      lastWriteAtRef.current = t;
+      setSyncStatus('syncing');
+      const ok = await saveFamily(familyCode, { users: appData.users, updatedAt: t });
+      setSyncStatus(ok ? 'idle' : 'error');
+    }, 600);
+    return () => {
+      if (writeTimerRef.current) clearTimeout(writeTimerRef.current);
+    };
+  }, [appData.users, familyCode]);
+
+  // 用代碼配對(其他裝置)
+  const pairWithCode = async (code) => {
+    setSyncStatus('syncing');
+    const remote = await loadFamily(code);
+    if (!remote || !Array.isArray(remote.users) || remote.users.length === 0) {
+      setSyncStatus('error');
+      return { ok: false, reason: '找不到這個家庭代碼,或還沒有玩家' };
+    }
+    lastWriteAtRef.current = remote.updatedAt || Date.now();
+    setFamilyCode(code);
+    try { localStorage.setItem('family_code', code); } catch (e) {}
+    const next = { users: remote.users, currentUserId: null };
+    setAppData(next);
+    try { localStorage.setItem('app_data', JSON.stringify(next)); } catch (e) {}
+    setSyncStatus('idle');
+    setScreen('user-select');
+    return { ok: true };
+  };
+
+  // 第一次建立玩家時自動產生家庭代碼
+  const ensureFamilyCode = () => {
+    if (familyCode) return familyCode;
+    const code = generateFamilyCode();
+    setFamilyCode(code);
+    try { localStorage.setItem('family_code', code); } catch (e) {}
+    return code;
   };
 
   const updateCurrentUser = (updater) => {
@@ -308,11 +380,11 @@ export default function App() {
   };
 
   const createUser = (name, petType, petName) => {
+    ensureFamilyCode(); // 第一次建立玩家自動產生雲端代碼
     const id = 'u' + Date.now();
     const newUser = {
       id,
       name: name.trim() || '玩家',
-      stars: 0,
       stars: 30,
       pet: { ...DEFAULT_PET_DATA, type: petType, name: petName.trim() || PETS[petType].name },
     };
@@ -433,8 +505,11 @@ export default function App() {
         {screen === 'user-select' && (
           <UserSelectScreen
             users={appData.users}
+            familyCode={familyCode}
+            syncStatus={syncStatus}
             onSelect={selectUser}
             onAddNew={() => setScreen('user-setup')}
+            onPair={pairWithCode}
           />
         )}
         {screen === 'home' && currentUser && (
@@ -706,38 +781,132 @@ function UserSetupScreen({ onCreate, onCancel }) {
 }
 
 // ============ 玩家:選擇玩家(已建立過的) ============
-function UserSelectScreen({ users, onSelect, onAddNew }) {
+function UserSelectScreen({ users, familyCode, syncStatus, onSelect, onAddNew, onPair }) {
+  const [pairMode, setPairMode] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [pairError, setPairError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const handlePair = async () => {
+    setPairError(null);
+    const code = codeInput.trim();
+    if (!/^\d{8}$/.test(code)) {
+      setPairError('家庭代碼是 8 位數字');
+      return;
+    }
+    const result = await onPair(code);
+    if (!result.ok) setPairError(result.reason);
+  };
+
+  const copyCode = async () => {
+    if (!familyCode) return;
+    try {
+      await navigator.clipboard.writeText(familyCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {}
+  };
+
+  if (pairMode) {
+    return (
+      <div className="text-center pt-6">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+          🔗 連結現有家庭
+        </h1>
+        <p className="text-base text-gray-600 mb-6">
+          在另一台裝置打開「換玩家」就能看到家庭代碼
+        </p>
+        <input
+          value={codeInput}
+          onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, ''))}
+          onKeyDown={(e) => e.key === 'Enter' && handlePair()}
+          placeholder="輸入 8 位數字代碼"
+          maxLength={8}
+          inputMode="numeric"
+          autoFocus
+          className="w-full bg-white border-4 border-purple-300 rounded-2xl px-4 py-4 text-3xl text-center font-bold text-purple-700 shadow-lg outline-none focus:border-purple-500 tracking-widest"
+        />
+        {pairError && <div className="mt-3 text-red-500 font-bold">{pairError}</div>}
+        <div className="flex gap-2 justify-center mt-6">
+          <button
+            onClick={() => { setPairMode(false); setPairError(null); setCodeInput(''); }}
+            className="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-2xl px-6 py-3 font-bold"
+          >
+            取消
+          </button>
+          <button
+            onClick={handlePair}
+            disabled={codeInput.length !== 8 || syncStatus === 'syncing'}
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:scale-105 transition text-white rounded-2xl px-8 py-3 font-bold text-lg shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {syncStatus === 'syncing' ? '搜尋中…' : '連結 🔗'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="text-center pt-6">
       <h1 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
         誰要玩? 👀
       </h1>
-      <div className={`grid gap-4 ${users.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        {users.map(u => {
-          const pet = PETS[u.pet?.type] || PETS.dog;
-          const clothes = u.pet?.equipped?.clothes ? findItem('clothes', u.pet.equipped.clothes) : null;
-          return (
-            <button
-              key={u.id}
-              onClick={() => onSelect(u.id)}
-              className={`bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-4 shadow-xl border-4 border-white`}
-            >
-              <PetVisual type={u.pet?.type || 'dog'} clothes={clothes} size="md" />
-              <div className="text-2xl font-bold text-white drop-shadow mt-2">{u.name}</div>
-              <div className="text-sm text-white opacity-90">的 {u.pet?.name || ''}</div>
-              <div className="mt-2 flex justify-center">
-                <span className="bg-white/90 rounded-lg px-3 py-1 text-sm font-bold text-yellow-900">⭐ {u.stars || 0}</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {users.length > 0 ? (
+        <div className={`grid gap-4 ${users.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {users.map(u => {
+            const pet = PETS[u.pet?.type] || PETS.dog;
+            const clothes = u.pet?.equipped?.clothes ? findItem('clothes', u.pet.equipped.clothes) : null;
+            return (
+              <button
+                key={u.id}
+                onClick={() => onSelect(u.id)}
+                className={`bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-4 shadow-xl border-4 border-white`}
+              >
+                <PetVisual type={u.pet?.type || 'dog'} clothes={clothes} size="md" />
+                <div className="text-2xl font-bold text-white drop-shadow mt-2">{u.name}</div>
+                <div className="text-sm text-white opacity-90">的 {u.pet?.name || ''}</div>
+                <div className="mt-2 flex justify-center">
+                  <span className="bg-white/90 rounded-lg px-3 py-1 text-sm font-bold text-yellow-900">⭐ {u.stars || 0}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white/70 rounded-2xl p-6 text-gray-500">
+          還沒有任何玩家,新增一個或用代碼連結現有家庭
+        </div>
+      )}
       <button
         onClick={onAddNew}
-        className="mt-6 bg-white border-4 border-dashed border-purple-400 text-purple-600 hover:bg-purple-50 rounded-2xl px-6 py-4 font-bold shadow w-full"
+        className="mt-4 bg-white border-4 border-dashed border-purple-400 text-purple-600 hover:bg-purple-50 rounded-2xl px-6 py-4 font-bold shadow w-full"
       >
         ＋ 新增玩家
       </button>
+      <button
+        onClick={() => setPairMode(true)}
+        className="mt-2 bg-white border-2 border-blue-300 text-blue-600 hover:bg-blue-50 rounded-2xl px-6 py-3 font-bold shadow w-full"
+      >
+        🔗 用家庭代碼連結其他裝置
+      </button>
+
+      {familyCode && (
+        <div className="mt-6 bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4">
+          <div className="text-xs text-gray-600 mb-1">這台裝置的家庭代碼(在其他裝置輸入即可同步)</div>
+          <button
+            onClick={copyCode}
+            className="bg-white rounded-xl px-4 py-3 shadow-md font-mono text-2xl font-bold text-yellow-900 tracking-widest hover:bg-yellow-100 transition w-full"
+          >
+            {familyCode}
+            <span className="ml-2 text-xs text-gray-500">{copied ? '✓ 已複製' : '(點我複製)'}</span>
+          </button>
+          <div className="mt-2 text-xs text-gray-500">
+            {syncStatus === 'syncing' && '☁ 同步中…'}
+            {syncStatus === 'idle' && '✅ 雲端同步已連線'}
+            {syncStatus === 'error' && '⚠️ 同步失敗(等網路恢復會重試)'}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
