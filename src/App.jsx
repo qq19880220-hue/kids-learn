@@ -662,7 +662,6 @@ export default function App() {
         ]} onStart={startGame} />}
         {screen === 'logic-menu' && <SubjectMenu title="🧩 邏輯遊戲" color="from-fuchsia-500 to-purple-600" games={[
           { id: 'logic-pattern',  icon: '🔁', title: '找規律',    desc: '🔴🔵🔴🔵🔴 ?',     color: 'from-fuchsia-400 to-pink-400' },
-          { id: 'logic-maze',     icon: '🐾', title: '走迷宮',    desc: '帶 🐶 去找 🦴',      color: 'from-purple-400 to-indigo-400' },
           { id: 'logic-symmetry', icon: '🪞', title: '對稱配對',  desc: '左半邊 → 找鏡像',    color: 'from-pink-400 to-rose-400' },
           { id: 'logic-shadow',   icon: '🌑', title: '影子配對',  desc: '哪個影子是這個?',   color: 'from-indigo-400 to-purple-400' },
           { id: 'logic-rotation', icon: '🔄', title: '圖形旋轉',  desc: '哪個是轉過的同一個?', color: 'from-violet-400 to-fuchsia-400' },
@@ -699,7 +698,6 @@ export default function App() {
 
         {/* 邏輯 / 空間 */}
         {screen === 'logic-pattern' && <LogicPatternGame onCorrect={onCorrect1} onWrong={onWrong} />}
-        {screen === 'logic-maze' && <LogicMazeGame onCorrect={onCorrect2} onWrong={onWrong} playSound={playSound} />}
         {screen === 'logic-symmetry' && <LogicSymmetryGame onCorrect={onCorrect1} onWrong={onWrong} />}
         {screen === 'logic-shadow' && <LogicShadowGame onCorrect={onCorrect1} onWrong={onWrong} />}
         {screen === 'logic-rotation' && <LogicRotationGame onCorrect={onCorrect2} onWrong={onWrong} />}
