@@ -674,7 +674,6 @@ export default function App() {
           { id: 'en-first', icon: '🔠', title: '選首字母', desc: '看圖找對應字母', color: 'from-teal-400 to-cyan-400' },
           { id: 'en-missing', icon: '🔡', title: '填中間字母', desc: 'd_g 是哪個?', color: 'from-cyan-400 to-blue-400' },
           { id: 'en-spell', icon: '✏️', title: '拼單字', desc: '把字母拼起來', color: 'from-yellow-400 to-orange-400' },
-          { id: 'en-cat', icon: '🗂️', title: '單字分類', desc: 'apple 是動物還是食物?', color: 'from-purple-400 to-pink-400' },
         ]} onStart={startGame} />}
 
         {/* 注音 */}
@@ -695,7 +694,6 @@ export default function App() {
         {screen === 'en-first' && <EnFirstLetterGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-missing' && <EnMissingLetterGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-spell' && <EnSpellGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} playSound={playSound} />}
-        {screen === 'en-cat' && <EnCategoryGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
 
         {/* 邏輯 / 空間 */}
         {screen === 'logic-pattern' && <LogicPatternGame onCorrect={onCorrect1} onWrong={onWrong} />}
