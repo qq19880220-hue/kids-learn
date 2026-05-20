@@ -67,73 +67,126 @@ const WORDS_LEVEL2 = [
 
 const TONE_MARKS = ['', '', 'ˊ', 'ˇ', 'ˋ'];
 
-// cat 用 cat 縮寫,因為 category 字太長
 const EN_WORDS = [
-  // 動物 animal
-  { word: 'cat',    zh: '貓',     emoji: '🐱', cat: 'animal' },
-  { word: 'dog',    zh: '狗',     emoji: '🐶', cat: 'animal' },
-  { word: 'fish',   zh: '魚',     emoji: '🐟', cat: 'animal' },
-  { word: 'bird',   zh: '鳥',     emoji: '🐦', cat: 'animal' },
-  { word: 'pig',    zh: '豬',     emoji: '🐷', cat: 'animal' },
-  { word: 'cow',    zh: '牛',     emoji: '🐄', cat: 'animal' },
-  { word: 'duck',   zh: '鴨子',   emoji: '🦆', cat: 'animal' },
-  { word: 'bee',    zh: '蜜蜂',   emoji: '🐝', cat: 'animal' },
-  { word: 'lion',   zh: '獅子',   emoji: '🦁', cat: 'animal' },
-  { word: 'frog',   zh: '青蛙',   emoji: '🐸', cat: 'animal' },
-  { word: 'fox',    zh: '狐狸',   emoji: '🦊', cat: 'animal' },
-  { word: 'owl',    zh: '貓頭鷹', emoji: '🦉', cat: 'animal' },
-  // 食物 food
-  { word: 'apple',  zh: '蘋果',   emoji: '🍎', cat: 'food' },
-  { word: 'banana', zh: '香蕉',   emoji: '🍌', cat: 'food' },
-  { word: 'milk',   zh: '牛奶',   emoji: '🥛', cat: 'food' },
-  { word: 'bread',  zh: '麵包',   emoji: '🍞', cat: 'food' },
-  { word: 'egg',    zh: '蛋',     emoji: '🥚', cat: 'food' },
-  { word: 'cake',   zh: '蛋糕',   emoji: '🎂', cat: 'food' },
-  { word: 'rice',   zh: '飯',     emoji: '🍚', cat: 'food' },
-  { word: 'juice',  zh: '果汁',   emoji: '🧃', cat: 'food' },
-  { word: 'ice',    zh: '冰塊',   emoji: '🧊', cat: 'food' },
-  // 顏色 color
-  { word: 'red',    zh: '紅色',   emoji: '🔴', cat: 'color' },
-  { word: 'blue',   zh: '藍色',   emoji: '🔵', cat: 'color' },
-  { word: 'green',  zh: '綠色',   emoji: '🟢', cat: 'color' },
-  { word: 'pink',   zh: '粉色',   emoji: '🌸', cat: 'color' },
-  { word: 'black',  zh: '黑色',   emoji: '⚫', cat: 'color' },
-  { word: 'white',  zh: '白色',   emoji: '⚪', cat: 'color' },
-  // 大自然 nature
-  { word: 'sun',    zh: '太陽',   emoji: '☀️', cat: 'nature' },
-  { word: 'moon',   zh: '月亮',   emoji: '🌙', cat: 'nature' },
-  { word: 'star',   zh: '星星',   emoji: '⭐', cat: 'nature' },
-  { word: 'tree',   zh: '樹',     emoji: '🌳', cat: 'nature' },
-  { word: 'rain',   zh: '下雨',   emoji: '☔', cat: 'nature' },
-  { word: 'snow',   zh: '雪',     emoji: '❄️', cat: 'nature' },
-  { word: 'sea',    zh: '海',     emoji: '🌊', cat: 'nature' },
-  { word: 'fire',   zh: '火',     emoji: '🔥', cat: 'nature' },
-  // 物品 thing
-  { word: 'car',    zh: '車',     emoji: '🚗', cat: 'thing' },
-  { word: 'book',   zh: '書',     emoji: '📚', cat: 'thing' },
-  { word: 'hat',    zh: '帽子',   emoji: '🎩', cat: 'thing' },
-  { word: 'ball',   zh: '球',     emoji: '⚽', cat: 'thing' },
-  { word: 'bag',    zh: '包包',   emoji: '🎒', cat: 'thing' },
-  { word: 'cup',    zh: '杯子',   emoji: '☕', cat: 'thing' },
-  { word: 'key',    zh: '鑰匙',   emoji: '🔑', cat: 'thing' },
-  { word: 'toy',    zh: '玩具',   emoji: '🧸', cat: 'thing' },
-  { word: 'bed',    zh: '床',     emoji: '🛏️', cat: 'thing' },
-  // 身體 body
-  { word: 'eye',    zh: '眼睛',   emoji: '👁️', cat: 'body' },
-  { word: 'ear',    zh: '耳朵',   emoji: '👂', cat: 'body' },
-  { word: 'nose',   zh: '鼻子',   emoji: '👃', cat: 'body' },
-  { word: 'hand',   zh: '手',     emoji: '✋', cat: 'body' },
-  { word: 'foot',   zh: '腳',     emoji: '🦶', cat: 'body' },
-  { word: 'lip',    zh: '嘴唇',   emoji: '👄', cat: 'body' },
+  // 動物 animal (20)
+  { word: 'cat',    zh: '貓',       emoji: '🐱', cat: 'animal' },
+  { word: 'dog',    zh: '狗',       emoji: '🐶', cat: 'animal' },
+  { word: 'fish',   zh: '魚',       emoji: '🐟', cat: 'animal' },
+  { word: 'bird',   zh: '鳥',       emoji: '🐦', cat: 'animal' },
+  { word: 'pig',    zh: '豬',       emoji: '🐷', cat: 'animal' },
+  { word: 'cow',    zh: '牛',       emoji: '🐄', cat: 'animal' },
+  { word: 'duck',   zh: '鴨子',     emoji: '🦆', cat: 'animal' },
+  { word: 'bee',    zh: '蜜蜂',     emoji: '🐝', cat: 'animal' },
+  { word: 'lion',   zh: '獅子',     emoji: '🦁', cat: 'animal' },
+  { word: 'frog',   zh: '青蛙',     emoji: '🐸', cat: 'animal' },
+  { word: 'fox',    zh: '狐狸',     emoji: '🦊', cat: 'animal' },
+  { word: 'owl',    zh: '貓頭鷹',   emoji: '🦉', cat: 'animal' },
+  { word: 'bear',   zh: '熊',       emoji: '🐻', cat: 'animal' },
+  { word: 'mouse',  zh: '老鼠',     emoji: '🐭', cat: 'animal' },
+  { word: 'rabbit', zh: '兔子',     emoji: '🐰', cat: 'animal' },
+  { word: 'snake',  zh: '蛇',       emoji: '🐍', cat: 'animal' },
+  { word: 'panda',  zh: '熊貓',     emoji: '🐼', cat: 'animal' },
+  { word: 'sheep',  zh: '綿羊',     emoji: '🐑', cat: 'animal' },
+  { word: 'horse',  zh: '馬',       emoji: '🐴', cat: 'animal' },
+  { word: 'monkey', zh: '猴子',     emoji: '🐵', cat: 'animal' },
+  // 食物 food (15)
+  { word: 'apple',  zh: '蘋果',     emoji: '🍎', cat: 'food' },
+  { word: 'banana', zh: '香蕉',     emoji: '🍌', cat: 'food' },
+  { word: 'milk',   zh: '牛奶',     emoji: '🥛', cat: 'food' },
+  { word: 'bread',  zh: '麵包',     emoji: '🍞', cat: 'food' },
+  { word: 'egg',    zh: '蛋',       emoji: '🥚', cat: 'food' },
+  { word: 'cake',   zh: '蛋糕',     emoji: '🎂', cat: 'food' },
+  { word: 'rice',   zh: '飯',       emoji: '🍚', cat: 'food' },
+  { word: 'juice',  zh: '果汁',     emoji: '🧃', cat: 'food' },
+  { word: 'ice',    zh: '冰塊',     emoji: '🧊', cat: 'food' },
+  { word: 'pear',   zh: '梨子',     emoji: '🍐', cat: 'food' },
+  { word: 'grape',  zh: '葡萄',     emoji: '🍇', cat: 'food' },
+  { word: 'melon',  zh: '哈密瓜',   emoji: '🍈', cat: 'food' },
+  { word: 'lemon',  zh: '檸檬',     emoji: '🍋', cat: 'food' },
+  { word: 'jam',    zh: '果醬',     emoji: '🍯', cat: 'food' },
+  { word: 'ham',    zh: '火腿',     emoji: '🥓', cat: 'food' },
+  // 顏色 color (8)
+  { word: 'red',    zh: '紅色',     emoji: '🔴', cat: 'color' },
+  { word: 'blue',   zh: '藍色',     emoji: '🔵', cat: 'color' },
+  { word: 'green',  zh: '綠色',     emoji: '🟢', cat: 'color' },
+  { word: 'pink',   zh: '粉色',     emoji: '🌸', cat: 'color' },
+  { word: 'black',  zh: '黑色',     emoji: '⚫', cat: 'color' },
+  { word: 'white',  zh: '白色',     emoji: '⚪', cat: 'color' },
+  { word: 'gray',   zh: '灰色',     emoji: '🩶', cat: 'color' },
+  { word: 'brown',  zh: '棕色',     emoji: '🟫', cat: 'color' },
+  // 大自然 nature (12)
+  { word: 'sun',    zh: '太陽',     emoji: '☀️', cat: 'nature' },
+  { word: 'moon',   zh: '月亮',     emoji: '🌙', cat: 'nature' },
+  { word: 'star',   zh: '星星',     emoji: '⭐', cat: 'nature' },
+  { word: 'tree',   zh: '樹',       emoji: '🌳', cat: 'nature' },
+  { word: 'rain',   zh: '下雨',     emoji: '☔', cat: 'nature' },
+  { word: 'snow',   zh: '雪',       emoji: '❄️', cat: 'nature' },
+  { word: 'sea',    zh: '海',       emoji: '🌊', cat: 'nature' },
+  { word: 'fire',   zh: '火',       emoji: '🔥', cat: 'nature' },
+  { word: 'cloud',  zh: '雲',       emoji: '☁️', cat: 'nature' },
+  { word: 'wind',   zh: '風',       emoji: '💨', cat: 'nature' },
+  { word: 'leaf',   zh: '葉子',     emoji: '🍃', cat: 'nature' },
+  { word: 'sky',    zh: '天空',     emoji: '🌌', cat: 'nature' },
+  // 物品 thing (15)
+  { word: 'car',    zh: '車',       emoji: '🚗', cat: 'thing' },
+  { word: 'book',   zh: '書',       emoji: '📚', cat: 'thing' },
+  { word: 'hat',    zh: '帽子',     emoji: '🎩', cat: 'thing' },
+  { word: 'ball',   zh: '球',       emoji: '⚽', cat: 'thing' },
+  { word: 'bag',    zh: '包包',     emoji: '🎒', cat: 'thing' },
+  { word: 'cup',    zh: '杯子',     emoji: '☕', cat: 'thing' },
+  { word: 'key',    zh: '鑰匙',     emoji: '🔑', cat: 'thing' },
+  { word: 'toy',    zh: '玩具',     emoji: '🧸', cat: 'thing' },
+  { word: 'bed',    zh: '床',       emoji: '🛏️', cat: 'thing' },
+  { word: 'pen',    zh: '筆',       emoji: '🖊️', cat: 'thing' },
+  { word: 'map',    zh: '地圖',     emoji: '🗺️', cat: 'thing' },
+  { word: 'lamp',   zh: '燈',       emoji: '💡', cat: 'thing' },
+  { word: 'doll',   zh: '娃娃',     emoji: '🪆', cat: 'thing' },
+  { word: 'kite',   zh: '風箏',     emoji: '🪁', cat: 'thing' },
+  { word: 'ring',   zh: '戒指',     emoji: '💍', cat: 'thing' },
+  // 身體 body (8)
+  { word: 'eye',    zh: '眼睛',     emoji: '👁️', cat: 'body' },
+  { word: 'ear',    zh: '耳朵',     emoji: '👂', cat: 'body' },
+  { word: 'nose',   zh: '鼻子',     emoji: '👃', cat: 'body' },
+  { word: 'hand',   zh: '手',       emoji: '✋', cat: 'body' },
+  { word: 'foot',   zh: '腳',       emoji: '🦶', cat: 'body' },
+  { word: 'lip',    zh: '嘴唇',     emoji: '👄', cat: 'body' },
+  { word: 'arm',    zh: '手臂',     emoji: '💪', cat: 'body' },
+  { word: 'leg',    zh: '腿',       emoji: '🦵', cat: 'body' },
+  // 動作 action (12)
+  { word: 'run',    zh: '跑',       emoji: '🏃', cat: 'action' },
+  { word: 'jump',   zh: '跳',       emoji: '🤸', cat: 'action' },
+  { word: 'sit',    zh: '坐',       emoji: '🪑', cat: 'action' },
+  { word: 'eat',    zh: '吃',       emoji: '🍽️', cat: 'action' },
+  { word: 'sleep',  zh: '睡覺',     emoji: '😴', cat: 'action' },
+  { word: 'play',   zh: '玩',       emoji: '🎮', cat: 'action' },
+  { word: 'read',   zh: '讀',       emoji: '📖', cat: 'action' },
+  { word: 'sing',   zh: '唱歌',     emoji: '🎤', cat: 'action' },
+  { word: 'dance',  zh: '跳舞',     emoji: '💃', cat: 'action' },
+  { word: 'swim',   zh: '游泳',     emoji: '🏊', cat: 'action' },
+  { word: 'walk',   zh: '走路',     emoji: '🚶', cat: 'action' },
+  { word: 'fly',    zh: '飛',       emoji: '🕊️', cat: 'action' },
+  // 家人 family (10)
+  { word: 'mom',    zh: '媽媽',     emoji: '👩', cat: 'family' },
+  { word: 'dad',    zh: '爸爸',     emoji: '👨', cat: 'family' },
+  { word: 'baby',   zh: '寶寶',     emoji: '👶', cat: 'family' },
+  { word: 'boy',    zh: '男孩',     emoji: '👦', cat: 'family' },
+  { word: 'girl',   zh: '女孩',     emoji: '👧', cat: 'family' },
+  { word: 'kid',    zh: '小孩',     emoji: '🧒', cat: 'family' },
+  { word: 'twin',   zh: '雙胞胎',   emoji: '👯', cat: 'family' },
+  { word: 'aunt',   zh: '阿姨',     emoji: '👵', cat: 'family' },
+  { word: 'son',    zh: '兒子',     emoji: '🧑', cat: 'family' },
+  { word: 'pet',    zh: '寵物',     emoji: '🐾', cat: 'family' },
 ];
 
 const EN_CATEGORIES = {
-  animal: { label: '動物', emoji: '🐾', color: 'from-orange-400 to-red-400' },
-  food:   { label: '食物', emoji: '🍴', color: 'from-yellow-400 to-orange-400' },
-  color:  { label: '顏色', emoji: '🎨', color: 'from-pink-400 to-purple-400' },
+  animal: { label: '動物',   emoji: '🐾', color: 'from-orange-400 to-red-400' },
+  food:   { label: '食物',   emoji: '🍴', color: 'from-yellow-400 to-orange-400' },
+  color:  { label: '顏色',   emoji: '🎨', color: 'from-pink-400 to-purple-400' },
   nature: { label: '大自然', emoji: '🌳', color: 'from-green-400 to-teal-400' },
-  thing:  { label: '物品', emoji: '🎁', color: 'from-blue-400 to-indigo-400' },
-  body:   { label: '身體', emoji: '👀', color: 'from-rose-400 to-pink-400' },
+  thing:  { label: '物品',   emoji: '🎁', color: 'from-blue-400 to-indigo-400' },
+  body:   { label: '身體',   emoji: '👀', color: 'from-rose-400 to-pink-400' },
+  action: { label: '動作',   emoji: '🏃', color: 'from-lime-400 to-green-400' },
+  family: { label: '家人',   emoji: '👨‍👩‍👧', color: 'from-purple-400 to-indigo-400' },
 };
 
 // ============ 寵物系統資料 ============
@@ -447,6 +500,14 @@ export default function App() {
     setScreen('user-select');
   };
 
+  const deleteUser = (id) => {
+    saveAppData({
+      ...appData,
+      users: appData.users.filter(u => u.id !== id),
+      currentUserId: appData.currentUserId === id ? null : appData.currentUserId,
+    });
+  };
+
   const initAudio = async () => {
     if (!synthReady) {
       await Tone.start();
@@ -552,6 +613,7 @@ export default function App() {
             onSelect={selectUser}
             onAddNew={() => setScreen('user-setup')}
             onPair={pairWithCode}
+            onDelete={deleteUser}
           />
         )}
         {screen === 'home' && currentUser && (
@@ -827,11 +889,13 @@ function UserSetupScreen({ onCreate, onCancel }) {
 }
 
 // ============ 玩家:選擇玩家(已建立過的) ============
-function UserSelectScreen({ users, familyCode, syncStatus, onSelect, onAddNew, onPair }) {
+function UserSelectScreen({ users, familyCode, syncStatus, onSelect, onAddNew, onPair, onDelete }) {
   const [pairMode, setPairMode] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [pairError, setPairError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handlePair = async () => {
     setPairError(null);
@@ -898,29 +962,74 @@ function UserSelectScreen({ users, familyCode, syncStatus, onSelect, onAddNew, o
         誰要玩? 👀
       </h1>
       {users.length > 0 ? (
-        <div className={`grid gap-4 ${users.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {users.map(u => {
-            const pet = PETS[u.pet?.type] || PETS.dog;
-            const clothes = u.pet?.equipped?.clothes ? findItem('clothes', u.pet.equipped.clothes) : null;
-            return (
-              <button
-                key={u.id}
-                onClick={() => onSelect(u.id)}
-                className={`bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-4 shadow-xl border-4 border-white`}
-              >
-                <PetVisual type={u.pet?.type || 'dog'} clothes={clothes} size="md" />
-                <div className="text-2xl font-bold text-white drop-shadow mt-2">{u.name}</div>
-                <div className="text-sm text-white opacity-90">的 {u.pet?.name || ''}</div>
-                <div className="mt-2 flex justify-center">
-                  <span className="bg-white/90 rounded-lg px-3 py-1 text-sm font-bold text-yellow-900">⭐ {u.stars || 0}</span>
+        <>
+          <div className={`grid gap-4 ${users.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {users.map(u => {
+              const pet = PETS[u.pet?.type] || PETS.dog;
+              const clothes = u.pet?.equipped?.clothes ? findItem('clothes', u.pet.equipped.clothes) : null;
+              return (
+                <div key={u.id} className="relative">
+                  <button
+                    onClick={() => editMode ? setConfirmDelete(u) : onSelect(u.id)}
+                    className={`w-full bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-4 shadow-xl border-4 border-white`}
+                  >
+                    <PetVisual type={u.pet?.type || 'dog'} clothes={clothes} size="md" />
+                    <div className="text-2xl font-bold text-white drop-shadow mt-2">{u.name}</div>
+                    <div className="text-sm text-white opacity-90">的 {u.pet?.name || ''}</div>
+                    <div className="mt-2 flex justify-center">
+                      <span className="bg-white/90 rounded-lg px-3 py-1 text-sm font-bold text-yellow-900">⭐ {u.stars || 0}</span>
+                    </div>
+                  </button>
+                  {editMode && (
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-lg text-lg animate-bounce">
+                      ✕
+                    </div>
+                  )}
                 </div>
-              </button>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className={`mt-3 ${editMode ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'} rounded-xl px-4 py-2 font-bold text-sm shadow transition`}
+          >
+            {editMode ? '✓ 完成編輯' : '⚙ 編輯 / 刪除帳號'}
+          </button>
+        </>
       ) : (
         <div className="bg-white/70 rounded-2xl p-6 text-gray-500">
           還沒有任何玩家,新增一個或用代碼連結現有家庭
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <PetVisual type={confirmDelete.pet?.type || 'dog'} size="md" float={false} />
+              <h3 className="text-xl font-bold text-gray-800 mt-3 mb-2">
+                確定要刪除「{confirmDelete.name}」嗎?
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {confirmDelete.pet?.name && `${confirmDelete.pet.name} 和 `}
+                ⭐ {confirmDelete.stars || 0} 顆星星都會不見,**無法復原**
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-2xl py-3 font-bold"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => { onDelete(confirmDelete.id); setConfirmDelete(null); setEditMode(false); }}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-2xl py-3 font-bold shadow"
+                >
+                  確定刪除
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
       <button
