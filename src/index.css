@@ -6,3 +6,9 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
+
+/* 消除手機 / 觸控裝置上的 300ms 點擊延遲,讓按鈕反應即時 */
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

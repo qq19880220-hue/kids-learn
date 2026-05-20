@@ -598,6 +598,7 @@ function useWhackGame(pickTarget, getDistractor, targetMatchFn) {
   const [started, setStarted] = useState(false);
   const moleIdRef = useRef(0);
   const scoreRef = useRef(0);
+  const targetRef = useRef(null);
 
   const start = () => {
     setStarted(true);
@@ -606,7 +607,9 @@ function useWhackGame(pickTarget, getDistractor, targetMatchFn) {
     setTimeLeft(30);
     setGameOver(false);
     setMoles([]);
-    setTarget(pickTarget());
+    const t = pickTarget();
+    targetRef.current = t;
+    setTarget(t);
   };
 
   useEffect(() => {
@@ -620,16 +623,23 @@ function useWhackGame(pickTarget, getDistractor, targetMatchFn) {
 
   useEffect(() => {
     if (!started || gameOver || !target) return;
-    const spawn = setInterval(() => {
+    const spawnMole = () => {
       setMoles(prev => {
-        if (prev.length >= 6) return prev;
-        const val = Math.random() < 0.45 ? target : getDistractor(target);
-        const m = { id: moleIdRef.current++, value: val, position: Math.floor(Math.random() * 9), createdAt: Date.now() };
-        return [...prev.filter(x => x.position !== m.position), m];
+        if (prev.length >= 7) return prev;
+        const used = new Set(prev.map(x => x.position));
+        const free = [];
+        for (let p = 0; p < 9; p++) if (!used.has(p)) free.push(p);
+        if (free.length === 0) return prev;
+        const position = free[Math.floor(Math.random() * free.length)];
+        const val = Math.random() < 0.5 ? target : getDistractor(target);
+        const m = { id: moleIdRef.current++, value: val, position, createdAt: Date.now() };
+        return [...prev, m];
       });
-    }, 800);
-    const clean = setInterval(() => setMoles(prev => prev.filter(m => Date.now() - m.createdAt < 2000)), 200);
-    return () => { clearInterval(spawn); clearInterval(clean); };
+    };
+    const initial = setTimeout(spawnMole, 100);
+    const spawn = setInterval(spawnMole, 450);
+    const clean = setInterval(() => setMoles(prev => prev.filter(m => Date.now() - m.createdAt < 1800)), 150);
+    return () => { clearTimeout(initial); clearInterval(spawn); clearInterval(clean); };
   }, [started, gameOver, target]);
 
   const hit = (mole, onCorrect, onWrong, refreshTarget) => {
@@ -639,7 +649,16 @@ function useWhackGame(pickTarget, getDistractor, targetMatchFn) {
       setScore(ns);
       onCorrect();
       setMoles(prev => prev.filter(m => m.id !== mole.id));
-      if (ns > 0 && ns % 5 === 0 && refreshTarget) setTarget(pickTarget());
+      if (ns > 0 && ns % 3 === 0 && refreshTarget) {
+        let nt = pickTarget();
+        let tries = 0;
+        while (nt === targetRef.current && tries < 10) {
+          nt = pickTarget();
+          tries++;
+        }
+        targetRef.current = nt;
+        setTarget(nt);
+      }
     } else {
       onWrong();
       setMoles(prev => prev.filter(m => m.id !== mole.id));
@@ -715,7 +734,15 @@ function WhackBoard({ target, moles, score, timeLeft, gameOver, started, start, 
 // ============ 注音遊戲:打地鼠 ============
 function WhackGame({ onCorrect, onWrong }) {
   const pickTarget = () => ZHUYIN_DATA[Math.floor(Math.random() * ZHUYIN_DATA.length)].symbol;
-  const getDistractor = () => ZHUYIN_DATA[Math.floor(Math.random() * ZHUYIN_DATA.length)].symbol;
+  const getDistractor = (currentTarget) => {
+    let s;
+    let tries = 0;
+    do {
+      s = ZHUYIN_DATA[Math.floor(Math.random() * ZHUYIN_DATA.length)].symbol;
+      tries++;
+    } while (s === currentTarget && tries < 10);
+    return s;
+  };
   const game = useWhackGame(pickTarget, getDistractor, (a, b) => a === b);
 
   return <WhackBoard {...game}
