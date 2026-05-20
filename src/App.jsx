@@ -93,11 +93,57 @@ const EN_WORDS = [
   { word: 'ball', zh: '球', emoji: '⚽' },
 ];
 
+// ============ 寵物系統資料 ============
+const PETS = {
+  elephant: { emoji: '🐘', name: '大象', color: 'from-purple-300 to-pink-300' },
+  dog:      { emoji: '🐶', name: '狗狗', color: 'from-amber-300 to-orange-300' },
+  cat:      { emoji: '🐱', name: '貓咪', color: 'from-pink-300 to-rose-300' },
+  penguin:  { emoji: '🐧', name: '企鵝', color: 'from-blue-300 to-cyan-300' },
+};
+
+const SHOP_ITEMS = {
+  food: [
+    { id: 'food_bone',    emoji: '🦴', name: '骨頭',   cost: 3 },
+    { id: 'food_cookie',  emoji: '🍪', name: '餅乾',   cost: 5 },
+    { id: 'food_meat',    emoji: '🥩', name: '肉肉',   cost: 10 },
+    { id: 'food_chicken', emoji: '🍗', name: '雞腿',   cost: 15 },
+    { id: 'food_cake',    emoji: '🎂', name: '蛋糕',   cost: 25 },
+  ],
+  clothes: [
+    { id: 'cloth_bow',     emoji: '🎀', name: '蝴蝶結',  cost: 20 },
+    { id: 'cloth_hat',     emoji: '🎩', name: '紳士帽',  cost: 40 },
+    { id: 'cloth_glasses', emoji: '🕶️', name: '太陽眼鏡', cost: 60 },
+    { id: 'cloth_crown',   emoji: '👑', name: '王冠',    cost: 80 },
+    { id: 'cloth_grad',    emoji: '🎓', name: '博士帽',  cost: 100 },
+  ],
+  toys: [
+    { id: 'toy_ball',       emoji: '🎾', name: '網球',      cost: 15 },
+    { id: 'toy_yoyo',       emoji: '🪀', name: '溜溜球',    cost: 25 },
+    { id: 'toy_teddy',      emoji: '🧸', name: '小熊娃娃',  cost: 30 },
+    { id: 'toy_skateboard', emoji: '🛼', name: '滑板',      cost: 50 },
+    { id: 'toy_rocket',     emoji: '🚀', name: '火箭',      cost: 80 },
+  ],
+};
+
+const findItem = (category, id) => SHOP_ITEMS[category]?.find(i => i.id === id);
+
+const DEFAULT_PET_DATA = {
+  type: null,
+  coins: 0,
+  affection: 0,
+  ownedClothes: [],
+  ownedToys: [],
+  foodInventory: {},
+  equipped: { clothes: null, toy: null },
+};
+
 // ============ 主元件 ============
 export default function App() {
   const [screen, setScreen] = useState('home');
   const [stars, setStars] = useState(0);
+  const [petData, setPetData] = useState(DEFAULT_PET_DATA);
   const [synthReady, setSynthReady] = useState(false);
+  const [feedingItem, setFeedingItem] = useState(null);
   const synthRef = useRef(null);
 
   useEffect(() => {
@@ -105,7 +151,67 @@ export default function App() {
       const r = localStorage.getItem('zhuyin_stars');
       if (r) setStars(parseInt(r));
     } catch (e) {}
+    try {
+      const p = localStorage.getItem('pet_data');
+      if (p) {
+        const parsed = JSON.parse(p);
+        const merged = {
+          ...DEFAULT_PET_DATA,
+          ...parsed,
+          equipped: { ...DEFAULT_PET_DATA.equipped, ...(parsed.equipped || {}) },
+          foodInventory: parsed.foodInventory || {},
+          ownedClothes: parsed.ownedClothes || [],
+          ownedToys: parsed.ownedToys || [],
+        };
+        setPetData(merged);
+        if (!merged.type) setScreen('pet-onboarding');
+      } else {
+        setScreen('pet-onboarding');
+      }
+    } catch (e) { setScreen('pet-onboarding'); }
   }, []);
+
+  const updatePet = (updater) => {
+    setPetData(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try { localStorage.setItem('pet_data', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+  const pickPet = (type) => { updatePet(prev => ({ ...prev, type })); setScreen('home'); };
+  const addCoins = (n) => updatePet(prev => ({ ...prev, coins: prev.coins + n }));
+  const buyItem = (category, item) => updatePet(prev => {
+    if (prev.coins < item.cost) return prev;
+    let next = { ...prev, coins: prev.coins - item.cost };
+    if (category === 'food') {
+      next.foodInventory = { ...prev.foodInventory, [item.id]: (prev.foodInventory[item.id] || 0) + 1 };
+    } else if (category === 'clothes') {
+      if (prev.ownedClothes.includes(item.id)) return prev;
+      next.ownedClothes = [...prev.ownedClothes, item.id];
+      next.equipped = { ...prev.equipped, clothes: item.id };
+    } else if (category === 'toys') {
+      if (prev.ownedToys.includes(item.id)) return prev;
+      next.ownedToys = [...prev.ownedToys, item.id];
+      next.equipped = { ...prev.equipped, toy: item.id };
+    }
+    return next;
+  });
+  const equipItem = (slot, itemId) => updatePet(prev => ({
+    ...prev,
+    equipped: { ...prev.equipped, [slot]: prev.equipped[slot] === itemId ? null : itemId },
+  }));
+  const feedPet = (itemId) => {
+    updatePet(prev => {
+      const count = prev.foodInventory[itemId] || 0;
+      if (count <= 0) return prev;
+      const newInv = { ...prev.foodInventory };
+      if (count > 1) newInv[itemId] = count - 1;
+      else delete newInv[itemId];
+      return { ...prev, foodInventory: newInv, affection: prev.affection + 1 };
+    });
+    setFeedingItem(itemId);
+    setTimeout(() => setFeedingItem(null), 1500);
+  };
 
   const initAudio = async () => {
     if (!synthReady) {
@@ -170,6 +276,7 @@ export default function App() {
     if (screen.startsWith('zhuyin-') && screen !== 'zhuyin-menu') setScreen('zhuyin-menu');
     else if (screen.startsWith('math-') && screen !== 'math-menu') setScreen('math-menu');
     else if (screen.startsWith('en-') && screen !== 'en-menu') setScreen('en-menu');
+    else if (screen === 'pet-shop') setScreen('pet-home');
     else setScreen('home');
   };
 
@@ -178,14 +285,14 @@ export default function App() {
     setScreen(target);
   };
 
-  const onCorrect1 = () => { playSound('correct'); addStars(1); };
-  const onCorrect2 = () => { playSound('correct'); addStars(2); };
+  const onCorrect1 = () => { playSound('correct'); addStars(1); addCoins(1); };
+  const onCorrect2 = () => { playSound('correct'); addStars(2); addCoins(2); };
   const onWrong = () => playSound('wrong');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-purple-100 p-4 select-none">
       <div className="max-w-3xl mx-auto">
-        {screen !== 'home' && (
+        {screen !== 'home' && screen !== 'pet-onboarding' && (
           <div className="flex items-center justify-between mb-4 bg-white rounded-2xl p-3 shadow-md">
             <div className="flex gap-2">
               <button onClick={goBack} className="flex items-center gap-1 px-3 py-2 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition font-bold">
@@ -195,14 +302,33 @@ export default function App() {
                 <Home className="w-5 h-5" />首頁
               </button>
             </div>
-            <div className="flex items-center gap-2 bg-yellow-300 px-4 py-2 rounded-xl">
-              <Star className="w-6 h-6 text-yellow-700 fill-yellow-500" />
-              <span className="font-bold text-yellow-900 text-xl">{stars}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-yellow-300 px-3 py-2 rounded-xl">
+                <Star className="w-5 h-5 text-yellow-700 fill-yellow-500" />
+                <span className="font-bold text-yellow-900 text-lg">{stars}</span>
+              </div>
+              <div className="flex items-center gap-1 bg-amber-300 px-3 py-2 rounded-xl">
+                <span className="text-lg">🪙</span>
+                <span className="font-bold text-amber-900 text-lg">{petData.coins}</span>
+              </div>
             </div>
           </div>
         )}
 
-        {screen === 'home' && <HomeScreen stars={stars} onPick={setScreen} />}
+        {screen === 'home' && <HomeScreen stars={stars} petData={petData} onPick={setScreen} />}
+        {screen === 'pet-onboarding' && <PetOnboardingScreen onPick={pickPet} />}
+        {screen === 'pet-home' && (
+          <PetHomeScreen
+            petData={petData}
+            onShop={() => setScreen('pet-shop')}
+            onEquip={equipItem}
+            onFeed={feedPet}
+            feedingItem={feedingItem}
+          />
+        )}
+        {screen === 'pet-shop' && (
+          <PetShopScreen petData={petData} onBuy={buyItem} />
+        )}
         {screen === 'zhuyin-menu' && <SubjectMenu title="🎯 注音遊戲" color="from-pink-500 to-purple-500" games={[
           { id: 'zhuyin-spell', icon: '✏️', title: '注音拼字', desc: '看圖拼出注音符號', color: 'from-pink-400 to-red-400' },
           { id: 'zhuyin-listen', icon: '👂', title: '聽聲找字', desc: '聽聽看是哪個注音', color: 'from-blue-300 to-purple-300' },
@@ -247,6 +373,10 @@ export default function App() {
           .animate-shake { animation: shake 0.3s ease-in-out; }
           @keyframes fade-in { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
           .animate-fade-in { animation: fade-in 0.3s ease-out; }
+          @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+          .animate-bounce-slow { animation: bounce-slow 2.5s ease-in-out infinite; }
+          @keyframes feed { 0% { transform: translateX(-30px) scale(0.8); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateX(30px) scale(1.1); opacity: 1; } 100% { transform: translateX(40px) scale(0); opacity: 0; } }
+          .animate-feed { animation: feed 1.5s ease-out forwards; }
         `}</style>
       </div>
     </div>
@@ -254,44 +384,339 @@ export default function App() {
 }
 
 // ============ 首頁 ============
-function HomeScreen({ stars, onPick }) {
+function HomeScreen({ stars, petData, onPick }) {
+  const pet = petData.type ? PETS[petData.type] : null;
+  const clothes = petData.equipped.clothes ? findItem('clothes', petData.equipped.clothes) : null;
+  const toy = petData.equipped.toy ? findItem('toys', petData.equipped.toy) : null;
+
   return (
     <div className="text-center">
-      <div className="mt-4 mb-6">
-        <h1 className="text-5xl md:text-6xl font-bold mb-2 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
+      <div className="mt-2 mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold mb-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
           學習樂園
         </h1>
-        <div className="text-2xl text-gray-600 mt-1">選一個科目開始吧!</div>
+        <div className="text-lg text-gray-600">選一個科目開始吧!</div>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 mb-6 shadow-md inline-flex items-center gap-3">
-        <Trophy className="w-8 h-8 text-yellow-500" />
-        <span className="text-xl font-bold text-gray-700">收集星星:</span>
-        <div className="flex items-center gap-1 bg-yellow-300 px-3 py-1 rounded-xl">
-          <Star className="w-6 h-6 text-yellow-700 fill-yellow-500" />
-          <span className="font-bold text-yellow-900 text-2xl">{stars}</span>
-        </div>
-      </div>
+      {pet && (
+        <button
+          onClick={() => onPick('pet-home')}
+          className={`w-full bg-gradient-to-br ${pet.color} rounded-3xl p-4 mb-4 shadow-xl hover:scale-[1.02] transition transform border-4 border-white`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="relative inline-block flex-shrink-0">
+              {clothes && (
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-3xl z-10">{clothes.emoji}</span>
+              )}
+              <span className="text-6xl inline-block animate-bounce-slow">{pet.emoji}</span>
+              {toy && (
+                <span className="absolute -bottom-1 -right-2 text-2xl">{toy.emoji}</span>
+              )}
+            </div>
+            <div className="flex-1 text-left">
+              <div className="text-white text-xl font-bold drop-shadow">我的{pet.name}</div>
+              <div className="text-white text-sm opacity-90">點我去看牠 →</div>
+            </div>
+            <div className="flex flex-col gap-1 text-right flex-shrink-0">
+              <div className="bg-white/90 rounded-xl px-2 py-1 flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-700 fill-yellow-500" />
+                <span className="font-bold text-yellow-900 text-sm">{stars}</span>
+              </div>
+              <div className="bg-white/90 rounded-xl px-2 py-1 flex items-center gap-1">
+                <span className="text-sm">🪙</span>
+                <span className="font-bold text-amber-900 text-sm">{petData.coins}</span>
+              </div>
+            </div>
+          </div>
+        </button>
+      )}
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <button onClick={() => onPick('zhuyin-menu')} className="bg-gradient-to-br from-pink-400 to-purple-500 hover:scale-105 transition transform text-white rounded-3xl p-8 shadow-xl">
-          <div className="text-7xl mb-3">🎯</div>
-          <div className="text-3xl font-bold mb-1">注音</div>
+      <div className="grid md:grid-cols-3 gap-3">
+        <button onClick={() => onPick('zhuyin-menu')} className="bg-gradient-to-br from-pink-400 to-purple-500 hover:scale-105 transition transform text-white rounded-3xl p-6 shadow-xl">
+          <div className="text-6xl mb-2">🎯</div>
+          <div className="text-2xl font-bold mb-1">注音</div>
           <div className="text-sm opacity-90">ㄅㄆㄇㄈ</div>
         </button>
-        <button onClick={() => onPick('math-menu')} className="bg-gradient-to-br from-blue-400 to-cyan-500 hover:scale-105 transition transform text-white rounded-3xl p-8 shadow-xl">
-          <div className="text-7xl mb-3">🔢</div>
-          <div className="text-3xl font-bold mb-1">數學</div>
+        <button onClick={() => onPick('math-menu')} className="bg-gradient-to-br from-blue-400 to-cyan-500 hover:scale-105 transition transform text-white rounded-3xl p-6 shadow-xl">
+          <div className="text-6xl mb-2">🔢</div>
+          <div className="text-2xl font-bold mb-1">數學</div>
           <div className="text-sm opacity-90">+ − &lt; &gt;</div>
         </button>
-        <button onClick={() => onPick('en-menu')} className="bg-gradient-to-br from-green-400 to-emerald-500 hover:scale-105 transition transform text-white rounded-3xl p-8 shadow-xl">
-          <div className="text-7xl mb-3">🔤</div>
-          <div className="text-3xl font-bold mb-1">英文</div>
+        <button onClick={() => onPick('en-menu')} className="bg-gradient-to-br from-green-400 to-emerald-500 hover:scale-105 transition transform text-white rounded-3xl p-6 shadow-xl">
+          <div className="text-6xl mb-2">🔤</div>
+          <div className="text-2xl font-bold mb-1">英文</div>
           <div className="text-sm opacity-90">ABC abc</div>
         </button>
       </div>
 
-      <div className="mt-8 text-gray-500 text-sm">每答對一題就會得到 ⭐ 星星喔!</div>
+      <div className="mt-6 text-gray-500 text-sm">答對一題:+1 ⭐ +1 🪙(難題雙倍)</div>
+    </div>
+  );
+}
+
+// ============ 寵物:選一隻 ============
+function PetOnboardingScreen({ onPick }) {
+  return (
+    <div className="text-center pt-6">
+      <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
+        歡迎來到學習樂園!
+      </h1>
+      <p className="text-xl text-gray-700 mb-2">先選一隻你的小夥伴 🌟</p>
+      <p className="text-base text-gray-500 mb-6">答對題目可以幫牠買食物、衣服跟玩具喔!</p>
+
+      <div className="grid grid-cols-2 gap-4">
+        {Object.entries(PETS).map(([key, pet]) => (
+          <button
+            key={key}
+            onClick={() => onPick(key)}
+            className={`bg-gradient-to-br ${pet.color} hover:scale-105 transition transform rounded-3xl p-6 shadow-xl border-4 border-white`}
+          >
+            <div className="text-7xl md:text-8xl mb-3 animate-bounce-slow">{pet.emoji}</div>
+            <div className="text-2xl font-bold text-white drop-shadow">{pet.name}</div>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 text-sm text-gray-500">提示:選好之後牠就是你的囉,可以買東西打扮牠 ✨</div>
+    </div>
+  );
+}
+
+// ============ 寵物:主畫面(看寵物、餵食、換裝、玩玩具) ============
+function PetHomeScreen({ petData, onShop, onEquip, onFeed, feedingItem }) {
+  const [tab, setTab] = useState('feed');
+  const pet = PETS[petData.type];
+  const clothes = petData.equipped.clothes ? findItem('clothes', petData.equipped.clothes) : null;
+  const toy = petData.equipped.toy ? findItem('toys', petData.equipped.toy) : null;
+  const feedingEmoji = feedingItem ? findItem('food', feedingItem)?.emoji : null;
+  const foodList = Object.entries(petData.foodInventory).filter(([, c]) => c > 0);
+
+  return (
+    <div>
+      <div className={`bg-gradient-to-br ${pet.color} rounded-3xl p-6 mb-4 shadow-xl border-4 border-white text-center relative overflow-hidden`}>
+        <div className="text-2xl font-bold text-white mb-2 drop-shadow">我的{pet.name}</div>
+        <div className="relative inline-block">
+          {clothes && (
+            <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-5xl z-10 drop-shadow-lg">{clothes.emoji}</span>
+          )}
+          <span className="text-9xl inline-block animate-bounce-slow">{pet.emoji}</span>
+          {toy && (
+            <span className="absolute -bottom-2 -right-4 text-4xl">{toy.emoji}</span>
+          )}
+          {feedingEmoji && (
+            <span className="absolute top-1/2 -left-12 text-5xl animate-feed">{feedingEmoji}</span>
+          )}
+        </div>
+        <div className="mt-3 text-white text-sm drop-shadow">陪伴次數:{petData.affection} 次 💕</div>
+      </div>
+
+      <button
+        onClick={onShop}
+        className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-2xl p-3 shadow-lg hover:scale-[1.02] transition font-bold text-xl mb-3 flex items-center justify-center gap-2"
+      >
+        🛒 去逛商店 <span className="bg-white/30 px-2 py-0.5 rounded-lg text-sm">🪙 {petData.coins}</span>
+      </button>
+
+      <div className="bg-white rounded-2xl p-2 mb-3 shadow-md flex gap-2">
+        {[
+          { id: 'feed', label: '🍖 餵食', count: foodList.reduce((a, [, c]) => a + c, 0) },
+          { id: 'clothes', label: '👕 換衣', count: petData.ownedClothes.length },
+          { id: 'toys', label: '🎾 玩具', count: petData.ownedToys.length },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-2 rounded-xl font-bold text-sm transition ${
+              tab === t.id ? 'bg-purple-400 text-white shadow' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {t.label} <span className="opacity-70">({t.count})</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-2xl p-3 shadow-md min-h-32">
+        {tab === 'feed' && (
+          foodList.length === 0 ? (
+            <div className="text-gray-400 py-6 text-center">
+              還沒有食物喔!去商店買吃的給牠 🛒
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {foodList.map(([id, count]) => {
+                const item = findItem('food', id);
+                if (!item) return null;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onFeed(id)}
+                    className="bg-yellow-50 hover:bg-yellow-100 rounded-2xl p-3 shadow-md border-2 border-yellow-200 active:scale-95 transition"
+                  >
+                    <div className="text-4xl mb-1">{item.emoji}</div>
+                    <div className="text-xs text-gray-600 font-bold">{item.name}</div>
+                    <div className="text-xs text-orange-600 font-bold">x {count}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )
+        )}
+        {tab === 'clothes' && (
+          petData.ownedClothes.length === 0 ? (
+            <div className="text-gray-400 py-6 text-center">
+              還沒有衣服喔!去商店買漂亮的衣服 🛒
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {petData.ownedClothes.map(id => {
+                const item = findItem('clothes', id);
+                if (!item) return null;
+                const equipped = petData.equipped.clothes === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onEquip('clothes', id)}
+                    className={`rounded-2xl p-3 shadow-md border-2 active:scale-95 transition ${
+                      equipped ? 'bg-purple-200 border-purple-400 ring-2 ring-purple-400' : 'bg-pink-50 hover:bg-pink-100 border-pink-200'
+                    }`}
+                  >
+                    <div className="text-4xl mb-1">{item.emoji}</div>
+                    <div className="text-xs text-gray-600 font-bold">{item.name}</div>
+                    {equipped && <div className="text-xs text-purple-600 font-bold">穿著中</div>}
+                  </button>
+                );
+              })}
+            </div>
+          )
+        )}
+        {tab === 'toys' && (
+          petData.ownedToys.length === 0 ? (
+            <div className="text-gray-400 py-6 text-center">
+              還沒有玩具喔!去商店買好玩的給牠 🛒
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {petData.ownedToys.map(id => {
+                const item = findItem('toys', id);
+                if (!item) return null;
+                const equipped = petData.equipped.toy === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onEquip('toy', id)}
+                    className={`rounded-2xl p-3 shadow-md border-2 active:scale-95 transition ${
+                      equipped ? 'bg-green-200 border-green-400 ring-2 ring-green-400' : 'bg-blue-50 hover:bg-blue-100 border-blue-200'
+                    }`}
+                  >
+                    <div className="text-4xl mb-1">{item.emoji}</div>
+                    <div className="text-xs text-gray-600 font-bold">{item.name}</div>
+                    {equipped && <div className="text-xs text-green-600 font-bold">在玩</div>}
+                  </button>
+                );
+              })}
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============ 寵物:商店 ============
+function PetShopScreen({ petData, onBuy }) {
+  const [tab, setTab] = useState('food');
+  const [flash, setFlash] = useState(null);
+  const items = SHOP_ITEMS[tab];
+
+  const handleBuy = (item) => {
+    if (petData.coins < item.cost) {
+      setFlash({ id: item.id, type: 'poor' });
+      setTimeout(() => setFlash(null), 800);
+      return;
+    }
+    if (tab === 'clothes' && petData.ownedClothes.includes(item.id)) {
+      setFlash({ id: item.id, type: 'owned' });
+      setTimeout(() => setFlash(null), 800);
+      return;
+    }
+    if (tab === 'toys' && petData.ownedToys.includes(item.id)) {
+      setFlash({ id: item.id, type: 'owned' });
+      setTimeout(() => setFlash(null), 800);
+      return;
+    }
+    onBuy(tab, item);
+    setFlash({ id: item.id, type: 'bought' });
+    setTimeout(() => setFlash(null), 800);
+  };
+
+  const isOwned = (item) => {
+    if (tab === 'clothes') return petData.ownedClothes.includes(item.id);
+    if (tab === 'toys') return petData.ownedToys.includes(item.id);
+    return false;
+  };
+
+  return (
+    <div>
+      <div className="bg-gradient-to-r from-amber-300 to-orange-300 rounded-2xl p-4 mb-3 shadow-lg text-center border-4 border-white">
+        <h2 className="text-3xl font-bold text-amber-900 drop-shadow">🛒 商店</h2>
+        <div className="mt-1 text-lg font-bold text-amber-900">你有 🪙 {petData.coins}</div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-2 mb-3 shadow-md flex gap-2">
+        {[
+          { id: 'food', label: '🍖 食物' },
+          { id: 'clothes', label: '👕 衣服' },
+          { id: 'toys', label: '🎾 玩具' },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-2 rounded-xl font-bold transition ${
+              tab === t.id ? 'bg-amber-400 text-white shadow' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {items.map(item => {
+          const owned = isOwned(item);
+          const poor = petData.coins < item.cost;
+          const flashing = flash?.id === item.id;
+          const flashType = flashing ? flash.type : null;
+          let cls = 'bg-white hover:bg-yellow-50';
+          if (flashType === 'bought') cls = 'bg-green-200 scale-105';
+          else if (flashType === 'poor') cls = 'bg-red-200 animate-shake';
+          else if (flashType === 'owned') cls = 'bg-blue-200';
+          else if (owned) cls = 'bg-gray-100';
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleBuy(item)}
+              disabled={owned}
+              className={`${cls} rounded-2xl p-4 shadow-md border-2 border-amber-200 transition transform active:scale-95 disabled:cursor-not-allowed`}
+            >
+              <div className="text-5xl mb-2">{item.emoji}</div>
+              <div className="font-bold text-gray-700 mb-1">{item.name}</div>
+              {owned ? (
+                <div className="text-sm text-gray-500 font-bold">已擁有 ✓</div>
+              ) : (
+                <div className={`text-sm font-bold ${poor ? 'text-red-500' : 'text-orange-600'}`}>
+                  🪙 {item.cost}
+                </div>
+              )}
+              {flashType === 'bought' && <div className="text-xs text-green-700 font-bold mt-1">買到了!🎉</div>}
+              {flashType === 'poor' && <div className="text-xs text-red-700 font-bold mt-1">錢不夠 💦</div>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 text-center text-gray-500 text-sm">
+        食物可以買很多次,衣服跟玩具買過就有了 ✨
+      </div>
     </div>
   );
 }
