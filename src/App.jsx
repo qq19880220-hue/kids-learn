@@ -67,39 +67,81 @@ const WORDS_LEVEL2 = [
 
 const TONE_MARKS = ['', '', 'ˊ', 'ˇ', 'ˋ'];
 
+// cat 用 cat 縮寫,因為 category 字太長
 const EN_WORDS = [
-  { word: 'cat', zh: '貓', emoji: '🐱' },
-  { word: 'dog', zh: '狗', emoji: '🐶' },
-  { word: 'fish', zh: '魚', emoji: '🐟' },
-  { word: 'bird', zh: '鳥', emoji: '🐦' },
-  { word: 'pig', zh: '豬', emoji: '🐷' },
-  { word: 'cow', zh: '牛', emoji: '🐄' },
-  { word: 'duck', zh: '鴨子', emoji: '🦆' },
-  { word: 'bee', zh: '蜜蜂', emoji: '🐝' },
-  { word: 'apple', zh: '蘋果', emoji: '🍎' },
-  { word: 'banana', zh: '香蕉', emoji: '🍌' },
-  { word: 'milk', zh: '牛奶', emoji: '🥛' },
-  { word: 'bread', zh: '麵包', emoji: '🍞' },
-  { word: 'egg', zh: '蛋', emoji: '🥚' },
-  { word: 'cake', zh: '蛋糕', emoji: '🎂' },
-  { word: 'red', zh: '紅色', emoji: '🔴' },
-  { word: 'blue', zh: '藍色', emoji: '🔵' },
-  { word: 'sun', zh: '太陽', emoji: '☀️' },
-  { word: 'moon', zh: '月亮', emoji: '🌙' },
-  { word: 'star', zh: '星星', emoji: '⭐' },
-  { word: 'tree', zh: '樹', emoji: '🌳' },
-  { word: 'car', zh: '車', emoji: '🚗' },
-  { word: 'book', zh: '書', emoji: '📚' },
-  { word: 'hat', zh: '帽子', emoji: '🎩' },
-  { word: 'ball', zh: '球', emoji: '⚽' },
+  // 動物 animal
+  { word: 'cat',    zh: '貓',     emoji: '🐱', cat: 'animal' },
+  { word: 'dog',    zh: '狗',     emoji: '🐶', cat: 'animal' },
+  { word: 'fish',   zh: '魚',     emoji: '🐟', cat: 'animal' },
+  { word: 'bird',   zh: '鳥',     emoji: '🐦', cat: 'animal' },
+  { word: 'pig',    zh: '豬',     emoji: '🐷', cat: 'animal' },
+  { word: 'cow',    zh: '牛',     emoji: '🐄', cat: 'animal' },
+  { word: 'duck',   zh: '鴨子',   emoji: '🦆', cat: 'animal' },
+  { word: 'bee',    zh: '蜜蜂',   emoji: '🐝', cat: 'animal' },
+  { word: 'lion',   zh: '獅子',   emoji: '🦁', cat: 'animal' },
+  { word: 'frog',   zh: '青蛙',   emoji: '🐸', cat: 'animal' },
+  { word: 'fox',    zh: '狐狸',   emoji: '🦊', cat: 'animal' },
+  { word: 'owl',    zh: '貓頭鷹', emoji: '🦉', cat: 'animal' },
+  // 食物 food
+  { word: 'apple',  zh: '蘋果',   emoji: '🍎', cat: 'food' },
+  { word: 'banana', zh: '香蕉',   emoji: '🍌', cat: 'food' },
+  { word: 'milk',   zh: '牛奶',   emoji: '🥛', cat: 'food' },
+  { word: 'bread',  zh: '麵包',   emoji: '🍞', cat: 'food' },
+  { word: 'egg',    zh: '蛋',     emoji: '🥚', cat: 'food' },
+  { word: 'cake',   zh: '蛋糕',   emoji: '🎂', cat: 'food' },
+  { word: 'rice',   zh: '飯',     emoji: '🍚', cat: 'food' },
+  { word: 'juice',  zh: '果汁',   emoji: '🧃', cat: 'food' },
+  { word: 'ice',    zh: '冰塊',   emoji: '🧊', cat: 'food' },
+  // 顏色 color
+  { word: 'red',    zh: '紅色',   emoji: '🔴', cat: 'color' },
+  { word: 'blue',   zh: '藍色',   emoji: '🔵', cat: 'color' },
+  { word: 'green',  zh: '綠色',   emoji: '🟢', cat: 'color' },
+  { word: 'pink',   zh: '粉色',   emoji: '🌸', cat: 'color' },
+  { word: 'black',  zh: '黑色',   emoji: '⚫', cat: 'color' },
+  { word: 'white',  zh: '白色',   emoji: '⚪', cat: 'color' },
+  // 大自然 nature
+  { word: 'sun',    zh: '太陽',   emoji: '☀️', cat: 'nature' },
+  { word: 'moon',   zh: '月亮',   emoji: '🌙', cat: 'nature' },
+  { word: 'star',   zh: '星星',   emoji: '⭐', cat: 'nature' },
+  { word: 'tree',   zh: '樹',     emoji: '🌳', cat: 'nature' },
+  { word: 'rain',   zh: '下雨',   emoji: '☔', cat: 'nature' },
+  { word: 'snow',   zh: '雪',     emoji: '❄️', cat: 'nature' },
+  { word: 'sea',    zh: '海',     emoji: '🌊', cat: 'nature' },
+  { word: 'fire',   zh: '火',     emoji: '🔥', cat: 'nature' },
+  // 物品 thing
+  { word: 'car',    zh: '車',     emoji: '🚗', cat: 'thing' },
+  { word: 'book',   zh: '書',     emoji: '📚', cat: 'thing' },
+  { word: 'hat',    zh: '帽子',   emoji: '🎩', cat: 'thing' },
+  { word: 'ball',   zh: '球',     emoji: '⚽', cat: 'thing' },
+  { word: 'bag',    zh: '包包',   emoji: '🎒', cat: 'thing' },
+  { word: 'cup',    zh: '杯子',   emoji: '☕', cat: 'thing' },
+  { word: 'key',    zh: '鑰匙',   emoji: '🔑', cat: 'thing' },
+  { word: 'toy',    zh: '玩具',   emoji: '🧸', cat: 'thing' },
+  { word: 'bed',    zh: '床',     emoji: '🛏️', cat: 'thing' },
+  // 身體 body
+  { word: 'eye',    zh: '眼睛',   emoji: '👁️', cat: 'body' },
+  { word: 'ear',    zh: '耳朵',   emoji: '👂', cat: 'body' },
+  { word: 'nose',   zh: '鼻子',   emoji: '👃', cat: 'body' },
+  { word: 'hand',   zh: '手',     emoji: '✋', cat: 'body' },
+  { word: 'foot',   zh: '腳',     emoji: '🦶', cat: 'body' },
+  { word: 'lip',    zh: '嘴唇',   emoji: '👄', cat: 'body' },
 ];
+
+const EN_CATEGORIES = {
+  animal: { label: '動物', emoji: '🐾', color: 'from-orange-400 to-red-400' },
+  food:   { label: '食物', emoji: '🍴', color: 'from-yellow-400 to-orange-400' },
+  color:  { label: '顏色', emoji: '🎨', color: 'from-pink-400 to-purple-400' },
+  nature: { label: '大自然', emoji: '🌳', color: 'from-green-400 to-teal-400' },
+  thing:  { label: '物品', emoji: '🎁', color: 'from-blue-400 to-indigo-400' },
+  body:   { label: '身體', emoji: '👀', color: 'from-rose-400 to-pink-400' },
+};
 
 // ============ 寵物系統資料 ============
 const PETS = {
-  elephant: { emoji: '🐘', image: '/pets/elephant.jpg', name: '大象', color: 'from-purple-300 to-pink-300' },
-  dog:      { emoji: '🐶', image: '/pets/dog.jpg',      name: '狗狗', color: 'from-amber-300 to-orange-300' },
-  cat:      { emoji: '🐱', image: '/pets/cat.jpg',      name: '貓咪', color: 'from-pink-300 to-rose-300' },
-  penguin:  { emoji: '🐧', image: '/pets/penguin.jpg',  name: '企鵝', color: 'from-blue-300 to-cyan-300' },
+  elephant: { emoji: '🐘', image: '/pets/elephant.png', name: '大象', color: 'from-purple-300 to-pink-300' },
+  dog:      { emoji: '🐶', image: '/pets/dog.png',      name: '狗狗', color: 'from-amber-300 to-orange-300' },
+  cat:      { emoji: '🐱', image: '/pets/cat.png',      name: '貓咪', color: 'from-pink-300 to-rose-300' },
+  penguin:  { emoji: '🐧', image: '/pets/penguin.png',  name: '企鵝', color: 'from-blue-300 to-cyan-300' },
 };
 
 const PET_NAME_SUGGESTIONS = ['柴柴', '嚕嚕', '橘子', '麻糬', '波波', '糖糖', '布丁', '小白'];
@@ -549,8 +591,10 @@ export default function App() {
         {screen === 'en-menu' && <SubjectMenu title="🔤 英文遊戲" color="from-green-500 to-emerald-500" games={[
           { id: 'en-pick', icon: '🖼️', title: '看圖選字', desc: '哪個是正確的單字?', color: 'from-green-400 to-lime-400' },
           { id: 'en-listen', icon: '👂', title: '聽音選圖', desc: '聽英文選圖片', color: 'from-lime-400 to-yellow-400' },
+          { id: 'en-first', icon: '🔠', title: '選首字母', desc: '看圖找對應字母', color: 'from-teal-400 to-cyan-400' },
+          { id: 'en-missing', icon: '🔡', title: '填中間字母', desc: 'd_g 是哪個?', color: 'from-cyan-400 to-blue-400' },
           { id: 'en-spell', icon: '✏️', title: '拼單字', desc: '把字母拼起來', color: 'from-yellow-400 to-orange-400' },
-          { id: 'en-case', icon: '🔤', title: '大小寫配對', desc: '配對大小寫字母', color: 'from-emerald-400 to-teal-400' },
+          { id: 'en-cat', icon: '🗂️', title: '單字分類', desc: 'apple 是動物還是食物?', color: 'from-purple-400 to-pink-400' },
         ]} onStart={startGame} />}
 
         {/* 注音 */}
@@ -568,8 +612,10 @@ export default function App() {
         {/* 英文 */}
         {screen === 'en-pick' && <EnPickGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-listen' && <EnListenGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
+        {screen === 'en-first' && <EnFirstLetterGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
+        {screen === 'en-missing' && <EnMissingLetterGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} />}
         {screen === 'en-spell' && <EnSpellGame onCorrect={onCorrect2} onWrong={onWrong} speakEn={speakEn} playSound={playSound} />}
-        {screen === 'en-case' && <EnCaseGame onCorrect={onCorrect1} onWrong={onWrong} />}
+        {screen === 'en-cat' && <EnCategoryGame onCorrect={onCorrect1} onWrong={onWrong} speakEn={speakEn} />}
 
         <style>{`
           @keyframes pop { 0% { transform: scale(0); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -2286,6 +2332,231 @@ function EnCaseGame({ onCorrect, onWrong }) {
       {feedback?.type === 'correct' && <div className="mt-6 text-4xl font-bold text-green-600 animate-bounce">答對了!⭐</div>}
       {feedback?.type === 'wrong' && <div className="mt-6 text-2xl font-bold text-red-500">再試試看!💪</div>}
       <div className="mt-4 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 英文:看圖選首字母 ============
+function EnFirstLetterGame({ onCorrect, onWrong, speakEn }) {
+  const [target, setTarget] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const t = EN_WORDS[Math.floor(Math.random() * EN_WORDS.length)];
+    const correct = t.word[0];
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const dist = new Set();
+    while (dist.size < 3) {
+      const d = letters[Math.floor(Math.random() * 26)];
+      if (d !== correct) dist.add(d);
+    }
+    setTarget(t);
+    setOpts([correct, ...dist].sort(() => Math.random() - 0.5));
+    setFeedback(null);
+    setTimeout(() => speakEn(t.word), 300);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (l) => {
+    if (feedback) return;
+    if (l === target.word[0]) {
+      setFeedback({ type: 'correct', l });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1400);
+    } else {
+      setFeedback({ type: 'wrong', l });
+      onWrong();
+      setTimeout(() => setFeedback(null), 900);
+    }
+  };
+
+  if (!target) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-teal-600 mb-4">🔠 選首字母</h2>
+      <button onClick={() => speakEn(target.word)}
+        className="bg-white rounded-3xl p-5 shadow-xl mb-3 w-full hover:scale-105 transition border-4 border-teal-300">
+        <div className="text-7xl mb-1">{target.emoji}</div>
+        <div className="text-2xl font-bold text-purple-700">{target.zh}</div>
+        <div className="text-sm text-teal-500 mt-1 flex items-center justify-center gap-1">
+          <Volume2 className="w-4 h-4" />點我聽英文
+        </div>
+      </button>
+      <p className="text-lg text-gray-700 mb-3 font-bold">這個字哪個字母開頭?</p>
+      <div className="grid grid-cols-4 gap-2">
+        {opts.map((l, i) => {
+          const c = feedback?.l === l;
+          let bg = 'bg-white hover:bg-yellow-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={i} onClick={() => pick(l)}
+              className={`${bg} rounded-2xl p-4 shadow-md border-2 border-teal-200 transition`}>
+              <span className="text-5xl font-bold text-purple-600 lowercase">{l}</span>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐ {target.word}</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">{target.word} 是 「{target.word[0]}」 開頭喔!</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 英文:填中間字母 ============
+function EnMissingLetterGame({ onCorrect, onWrong, speakEn }) {
+  const [target, setTarget] = useState(null);
+  const [missingIdx, setMissingIdx] = useState(0);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    // 只挑 3-5 字母的單字當題目
+    const pool = EN_WORDS.filter(w => w.word.length >= 3 && w.word.length <= 5);
+    const t = pool[Math.floor(Math.random() * pool.length)];
+    // 挖掉中間,優先挖母音
+    const vowels = ['a','e','i','o','u'];
+    let mIdx = -1;
+    for (let i = 1; i < t.word.length - 1; i++) {
+      if (vowels.includes(t.word[i])) { mIdx = i; break; }
+    }
+    if (mIdx === -1) mIdx = Math.floor(t.word.length / 2);
+    const correct = t.word[mIdx];
+    // 選項:該母音 + 其他幾個母音 / 接近的字母
+    const all = vowels.includes(correct) ? vowels.filter(v => v !== correct).slice(0, 3) : 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c => c !== correct).sort(() => Math.random() - 0.5).slice(0, 3);
+    setTarget(t);
+    setMissingIdx(mIdx);
+    setOpts([correct, ...all].sort(() => Math.random() - 0.5));
+    setFeedback(null);
+    setTimeout(() => speakEn(t.word), 300);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (l) => {
+    if (feedback) return;
+    if (l === target.word[missingIdx]) {
+      setFeedback({ type: 'correct', l });
+      setScore(s => s + 1);
+      onCorrect();
+      speakEn(target.word);
+      setTimeout(newRound, 1600);
+    } else {
+      setFeedback({ type: 'wrong', l });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  if (!target) return null;
+  const blanked = target.word.split('').map((c, i) => i === missingIdx ? (feedback?.type === 'correct' ? c : '_') : c).join(' ');
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-cyan-600 mb-4">🔡 填中間字母</h2>
+      <button onClick={() => speakEn(target.word)}
+        className="bg-white rounded-3xl p-5 shadow-xl mb-3 w-full hover:scale-105 transition border-4 border-cyan-300">
+        <div className="text-7xl mb-1">{target.emoji}</div>
+        <div className="text-2xl font-bold text-purple-700">{target.zh}</div>
+        <div className="text-sm text-cyan-500 mt-1 flex items-center justify-center gap-1">
+          <Volume2 className="w-4 h-4" />點我聽英文
+        </div>
+      </button>
+      <div className="bg-yellow-100 rounded-2xl p-4 mb-3 border-4 border-yellow-300">
+        <div className={`text-6xl font-bold tracking-widest lowercase ${feedback?.type === 'correct' ? 'text-green-600' : 'text-purple-700'}`}>
+          {blanked}
+        </div>
+      </div>
+      <p className="text-base text-gray-600 mb-3">少了哪個字母?</p>
+      <div className="grid grid-cols-4 gap-2">
+        {opts.map((l, i) => {
+          const c = feedback?.l === l;
+          let bg = 'bg-white hover:bg-yellow-100';
+          if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
+          return (
+            <button key={i} onClick={() => pick(l)}
+              className={`${bg} rounded-2xl p-4 shadow-md border-2 border-cyan-200 transition`}>
+              <span className="text-5xl font-bold text-purple-600 lowercase">{l}</span>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">正解 {target.word}</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
+    </div>
+  );
+}
+
+// ============ 英文:單字分類 ============
+function EnCategoryGame({ onCorrect, onWrong, speakEn }) {
+  const [target, setTarget] = useState(null);
+  const [opts, setOpts] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+
+  const newRound = () => {
+    const t = EN_WORDS[Math.floor(Math.random() * EN_WORDS.length)];
+    const allCats = Object.keys(EN_CATEGORIES);
+    const distractors = allCats.filter(c => c !== t.cat).sort(() => Math.random() - 0.5).slice(0, 3);
+    setTarget(t);
+    setOpts([t.cat, ...distractors].sort(() => Math.random() - 0.5));
+    setFeedback(null);
+    setTimeout(() => speakEn(t.word), 300);
+  };
+
+  useEffect(() => { newRound(); }, []);
+
+  const pick = (cat) => {
+    if (feedback) return;
+    if (cat === target.cat) {
+      setFeedback({ type: 'correct', cat });
+      setScore(s => s + 1);
+      onCorrect();
+      setTimeout(newRound, 1500);
+    } else {
+      setFeedback({ type: 'wrong', cat });
+      onWrong();
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  if (!target) return null;
+  return (
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-purple-600 mb-4">🗂️ 單字分類</h2>
+      <button onClick={() => speakEn(target.word)}
+        className="bg-white rounded-3xl p-5 shadow-xl mb-3 w-full hover:scale-105 transition border-4 border-purple-300">
+        <div className="text-7xl mb-1">{target.emoji}</div>
+        <div className="text-3xl font-bold text-purple-700 lowercase">{target.word}</div>
+        <div className="text-base text-gray-600 mt-1">{target.zh}</div>
+        <div className="text-sm text-purple-500 mt-1 flex items-center justify-center gap-1">
+          <Volume2 className="w-4 h-4" />再聽一次
+        </div>
+      </button>
+      <p className="text-lg text-gray-700 mb-3 font-bold">這個字屬於哪一類?</p>
+      <div className="grid grid-cols-2 gap-3">
+        {opts.map((cat, i) => {
+          const c = EN_CATEGORIES[cat];
+          const sel = feedback?.cat === cat;
+          let extra = '';
+          if (sel) extra = feedback.type === 'correct' ? 'scale-110 ring-4 ring-green-500' : 'animate-shake ring-4 ring-red-500';
+          return (
+            <button key={i} onClick={() => pick(cat)}
+              className={`bg-gradient-to-br ${c.color} hover:scale-105 transition transform text-white rounded-3xl p-5 shadow-xl ${extra}`}>
+              <div className="text-5xl mb-1">{c.emoji}</div>
+              <div className="text-2xl font-bold drop-shadow">{c.label}</div>
+            </button>
+          );
+        })}
+      </div>
+      {feedback?.type === 'correct' && <div className="mt-4 text-3xl font-bold text-green-600 animate-bounce">答對了!⭐</div>}
+      {feedback?.type === 'wrong' && <div className="mt-4 text-xl font-bold text-red-500">{target.word} 是 {EN_CATEGORIES[target.cat].emoji} {EN_CATEGORIES[target.cat].label} 喔!</div>}
+      <div className="mt-3 text-gray-600">答對:{score} 題</div>
     </div>
   );
 }
