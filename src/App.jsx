@@ -200,16 +200,118 @@ const PETS = {
 const PET_NAME_SUGGESTIONS = ['柴柴', '嚕嚕', '橘子', '麻糬', '波波', '糖糖', '布丁', '小白'];
 
 // 顯示寵物(用圖片,沒圖則 fallback emoji),可疊頭飾/玩具
-function PetVisual({ type, clothes, toy, feedingEmoji, size = 'md', float = true }) {
+// ============ 商品 SVG ============
+// 洋裝 ── 接受 color + pattern (solid / dots / stripes / floral)
+function DressSVG({ color = '#ec4899', pattern = 'solid', size = 80 }) {
+  // 用一個固定種子產生點點/條紋位置,讓同款式視覺一致
+  const stripeOffset = 4;
+  return (
+    <svg viewBox="0 0 100 120" width={size} height={size} style={{ display: 'inline-block', overflow: 'visible' }}>
+      <defs>
+        <clipPath id={`dress-clip-${color.replace('#', '')}-${pattern}`}>
+          <path d="M 38 20 L 62 20 L 66 42 L 82 105 L 18 105 L 34 42 Z" />
+        </clipPath>
+      </defs>
+      {/* 肩帶 */}
+      <rect x="40" y="10" width="6" height="14" rx="2" fill={color} stroke="#444" strokeWidth="1.2" />
+      <rect x="54" y="10" width="6" height="14" rx="2" fill={color} stroke="#444" strokeWidth="1.2" />
+      {/* 上半身 + 裙擺 (一體) */}
+      <path d="M 38 20 L 62 20 L 66 42 L 82 105 L 18 105 L 34 42 Z" fill={color} stroke="#333" strokeWidth="2" strokeLinejoin="round" />
+      {/* 腰帶 */}
+      <rect x="32" y="42" width="36" height="4" fill="rgba(0,0,0,0.18)" />
+      {/* 花樣 (clip 在裙子裡) */}
+      <g clipPath={`url(#dress-clip-${color.replace('#', '')}-${pattern})`}>
+        {pattern === 'dots' && (
+          <g fill="white" opacity="0.85">
+            {[[35,60],[55,58],[45,72],[65,72],[30,82],[50,86],[70,86],[40,98],[60,98]].map(([x,y],i) => (
+              <circle key={i} cx={x} cy={y} r="2.6" />
+            ))}
+          </g>
+        )}
+        {pattern === 'stripes' && (
+          <g fill="white" opacity="0.7">
+            {[55, 68, 81, 94].map((y, i) => (
+              <rect key={i} x="0" y={y + stripeOffset} width="100" height="3" />
+            ))}
+          </g>
+        )}
+        {pattern === 'floral' && (
+          <g>
+            {[[36,62],[58,62],[44,78],[64,80],[32,96],[52,96],[72,96]].map(([x,y],i) => (
+              <g key={i} transform={`translate(${x} ${y})`}>
+                <circle cx="0" cy="0" r="3" fill="#fff" />
+                <circle cx="-3" cy="-2" r="1.6" fill="#fde68a" />
+                <circle cx="3" cy="-2" r="1.6" fill="#fde68a" />
+                <circle cx="-3" cy="2" r="1.6" fill="#fde68a" />
+                <circle cx="3" cy="2" r="1.6" fill="#fde68a" />
+                <circle cx="0" cy="0" r="1.2" fill="#f59e0b" />
+              </g>
+            ))}
+          </g>
+        )}
+        {pattern === 'hearts' && (
+          <g fill="#fff" opacity="0.9">
+            {[[38,62],[58,62],[48,80],[68,82],[34,96],[54,96],[74,96]].map(([x,y],i) => (
+              <path key={i} d={`M ${x} ${y} q -4 -4 -7 0 q -3 3 0 6 l 7 7 l 7 -7 q 3 -3 0 -6 q -3 -4 -7 0 Z`} />
+            ))}
+          </g>
+        )}
+      </g>
+      {/* 蝴蝶結 (腰部裝飾) */}
+      <g transform="translate(50 44)">
+        <path d="M -6 0 q -4 -3 -4 0 q 0 3 4 0 Z" fill="#fff" stroke="#444" strokeWidth="1" />
+        <path d="M 6 0 q 4 -3 4 0 q 0 3 -4 0 Z" fill="#fff" stroke="#444" strokeWidth="1" />
+        <circle cx="0" cy="0" r="2" fill="#fff" stroke="#444" strokeWidth="1" />
+      </g>
+    </svg>
+  );
+}
+
+// 耳環 ── 一顆寶石垂飾
+function EarringSVG({ color = '#f59e0b', size = 18 }) {
+  return (
+    <svg viewBox="0 0 20 32" width={size} height={size * 1.6} style={{ display: 'inline-block' }}>
+      <circle cx="10" cy="5" r="3" fill={color} stroke="#444" strokeWidth="0.8" />
+      <line x1="10" y1="8" x2="10" y2="17" stroke="#888" strokeWidth="1" />
+      <path d="M 10 17 q -5 4 0 11 q 5 -7 0 -11 Z" fill={color} stroke="#444" strokeWidth="0.8" />
+      <circle cx="9" cy="20" r="1.2" fill="#fff" opacity="0.7" />
+    </svg>
+  );
+}
+
+// 手鍊 ── 一圈珠鍊
+function BraceletSVG({ color = '#ec4899', size = 28 }) {
+  const beads = 8;
+  return (
+    <svg viewBox="0 0 40 40" width={size} height={size} style={{ display: 'inline-block' }}>
+      <ellipse cx="20" cy="20" rx="15" ry="8" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5" />
+      {Array.from({ length: beads }).map((_, i) => {
+        const a = (i / beads) * Math.PI * 2;
+        const cx = 20 + Math.cos(a) * 15;
+        const cy = 20 + Math.sin(a) * 8;
+        return <circle key={i} cx={cx} cy={cy} r="2.4" fill={color} stroke="#444" strokeWidth="0.6" />;
+      })}
+    </svg>
+  );
+}
+
+const SVG_RENDERERS = {
+  dress: DressSVG,
+  earring: EarringSVG,
+  bracelet: BraceletSVG,
+};
+
+function PetVisual({ type, clothes, toys, feedingEmoji, size = 'md', float = true }) {
   const pet = PETS[type];
   if (!pet) return null;
   const sizes = {
-    xs: { box: 'w-14 h-14',   emoji: 'text-5xl', clothes: 'text-2xl', toy: 'text-xl', feed: 'text-3xl' },
-    sm: { box: 'w-20 h-20',   emoji: 'text-6xl', clothes: 'text-3xl', toy: 'text-2xl', feed: 'text-4xl' },
-    md: { box: 'w-32 h-32',   emoji: 'text-8xl', clothes: 'text-4xl', toy: 'text-3xl', feed: 'text-5xl' },
-    lg: { box: 'w-48 h-48',   emoji: 'text-9xl', clothes: 'text-6xl', toy: 'text-4xl', feed: 'text-6xl' },
+    xs: { box: 'w-14 h-14',   emoji: 'text-5xl', clothes: 'text-2xl', toy: 'text-xl',  feed: 'text-3xl', svgBody: 32,  svgEar: 14, svgWrist: 18 },
+    sm: { box: 'w-20 h-20',   emoji: 'text-6xl', clothes: 'text-3xl', toy: 'text-2xl', feed: 'text-4xl', svgBody: 48,  svgEar: 18, svgWrist: 22 },
+    md: { box: 'w-32 h-32',   emoji: 'text-8xl', clothes: 'text-4xl', toy: 'text-3xl', feed: 'text-5xl', svgBody: 72,  svgEar: 28, svgWrist: 32 },
+    lg: { box: 'w-48 h-48',   emoji: 'text-9xl', clothes: 'text-6xl', toy: 'text-4xl', feed: 'text-6xl', svgBody: 110, svgEar: 38, svgWrist: 48 },
   };
   const s = sizes[size];
+  const toyList = Array.isArray(toys) ? toys.filter(Boolean).slice(0, MAX_TOYS_EQUIPPED) : [];
   return (
     <div className={`relative inline-block ${s.box}`}>
       <div className={`w-full h-full ${float ? 'animate-bounce-slow' : ''}`}>
@@ -221,15 +323,13 @@ function PetVisual({ type, clothes, toy, feedingEmoji, size = 'md', float = true
           </div>
         )}
       </div>
-      {clothes && (
-        <span className={`absolute -top-2 left-1/2 -translate-x-1/2 z-10 ${s.clothes} drop-shadow-lg pointer-events-none`}>
-          {clothes.emoji}
-        </span>
-      )}
-      {toy && (
-        <span className={`absolute bottom-0 -right-1 ${s.toy} pointer-events-none`}>
-          {toy.emoji}
-        </span>
+      {clothes && <ClothesOverlay clothes={clothes} s={s} />}
+      {toyList.length > 0 && (
+        <div className="absolute -bottom-1 right-0 left-0 flex flex-row-reverse items-end justify-start gap-0.5 pointer-events-none z-10">
+          {toyList.map((t, i) => (
+            <span key={`${t.id}-${i}`} className={`${s.toy} drop-shadow`}>{t.emoji}</span>
+          ))}
+        </div>
       )}
       {feedingEmoji && (
         <span className={`absolute top-1/2 -left-10 ${s.feed} animate-feed pointer-events-none`}>
@@ -240,37 +340,151 @@ function PetVisual({ type, clothes, toy, feedingEmoji, size = 'md', float = true
   );
 }
 
+// 衣服 / 飾品的「穿在身上」位置 —— 依 pos 決定錨點
+function ClothesOverlay({ clothes, s }) {
+  const pos = clothes.pos || 'head';
+  if (pos === 'body') {
+    // 洋裝 —— 蓋在身體中間
+    return (
+      <span className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none drop-shadow-lg" style={{ top: '32%' }}>
+        <ItemSvg item={clothes} size={s.svgBody} />
+      </span>
+    );
+  }
+  if (pos === 'neck') {
+    // 項鍊 —— 蓋在脖子/胸口位置
+    return (
+      <span className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none drop-shadow-lg" style={{ top: '28%' }}>
+        <ItemSvg item={clothes} size={Math.round(s.svgBody * 0.75)} />
+      </span>
+    );
+  }
+  if (pos === 'face') {
+    // 一對耳環(單張 PNG 已含左右兩顆)—— 在臉/耳朵旁,只渲染一次
+    return (
+      <span className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none drop-shadow" style={{ top: '18%' }}>
+        <ItemSvg item={clothes} size={Math.round(s.svgBody * 0.55)} />
+      </span>
+    );
+  }
+  if (pos === 'ear') {
+    // SVG 耳環 —— 左右耳各一顆
+    return (
+      <>
+        <span className="absolute z-10 pointer-events-none drop-shadow" style={{ top: '8%', left: '8%' }}>
+          <ItemSvg item={clothes} size={s.svgEar} />
+        </span>
+        <span className="absolute z-10 pointer-events-none drop-shadow" style={{ top: '8%', right: '8%' }}>
+          <ItemSvg item={clothes} size={s.svgEar} />
+        </span>
+      </>
+    );
+  }
+  if (pos === 'wrist') {
+    // 手鍊 —— 左下手腕
+    return (
+      <span className="absolute z-10 pointer-events-none drop-shadow" style={{ bottom: '14%', left: '10%' }}>
+        <ItemSvg item={clothes} size={s.svgWrist} />
+      </span>
+    );
+  }
+  // 預設 head —— 帽子/王冠類戴頭頂(維持舊行為)
+  return (
+    <span className={`absolute -top-2 left-1/2 -translate-x-1/2 z-10 ${s.clothes} drop-shadow-lg pointer-events-none`}>
+      {clothes.emoji}
+    </span>
+  );
+}
+
+// 統一渲染 item:image > SVG > emoji,給 PetVisual / ShopItemVisual 共用
+// (PNG 載入失敗自動 fallback 到下一層,避免使用者還沒存圖就看到破圖)
+function ItemSvg({ item, size }) {
+  const [imgError, setImgError] = useState(false);
+  const px = typeof size === 'number' ? size : 48;
+  if (item.image && !imgError) {
+    return (
+      <img
+        src={item.image}
+        alt={item.name}
+        style={{ width: px, height: px }}
+        className="object-contain inline-block"
+        draggable="false"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+  const Comp = item.svgKey && SVG_RENDERERS[item.svgKey];
+  if (Comp) return <Comp {...(item.svgProps || {})} size={size} />;
+  return (
+    <span style={{ width: px, height: px, fontSize: px * 0.8, lineHeight: 1 }} className="inline-flex items-center justify-center">
+      {item.emoji}
+    </span>
+  );
+}
+
 // 商店物品(emoji 當 fallback,image 是 Fluent Emoji 3D 圖檔)
 const SHOP_ITEMS = {
   food: [
-    { id: 'food_bone',    emoji: '🦴', image: '/shop/food_bone.png',    name: '骨頭',   cost: 3 },
-    { id: 'food_cookie',  emoji: '🍪', image: '/shop/food_cookie.png',  name: '餅乾',   cost: 5 },
-    { id: 'food_meat',    emoji: '🥩', image: '/shop/food_meat.png',    name: '肉肉',   cost: 10 },
-    { id: 'food_chicken', emoji: '🍗', image: '/shop/food_chicken.png', name: '雞腿',   cost: 15 },
-    { id: 'food_cake',    emoji: '🎂', image: '/shop/food_cake.png',    name: '蛋糕',   cost: 25 },
+    { id: 'food_bone',     emoji: '🦴', image: '/shop/food_bone.png',    name: '骨頭',   cost: 3 },
+    { id: 'food_cookie',   emoji: '🍪', image: '/shop/food_cookie.png',  name: '餅乾',   cost: 5 },
+    { id: 'food_cabbage',  emoji: '🥬',                                  name: '高麗菜', cost: 5 },
+    { id: 'food_pumpkin',  emoji: '🎃',                                  name: '南瓜',   cost: 8 },
+    { id: 'food_meat',     emoji: '🥩', image: '/shop/food_meat.png',    name: '肉肉',   cost: 10 },
+    { id: 'food_popsicle', emoji: '🍡', image: '/shop/food_popsicle.png', name: '冰棒',   cost: 10 },
+    { id: 'food_chicken',  emoji: '🍗', image: '/shop/food_chicken.png',  name: '雞腿',   cost: 15 },
+    { id: 'food_icecream', emoji: '🍦', image: '/shop/food_icecream.png', name: '冰淇淋', cost: 15 },
+    { id: 'food_cake',     emoji: '🎂', image: '/shop/food_cake.png',    name: '蛋糕',   cost: 25 },
   ],
   clothes: [
-    { id: 'cloth_bow',     emoji: '🎀', image: '/shop/cloth_bow.png',     name: '蝴蝶結',  cost: 20 },
-    { id: 'cloth_hat',     emoji: '🎩', image: '/shop/cloth_hat.png',     name: '紳士帽',  cost: 40 },
-    { id: 'cloth_glasses', emoji: '🕶️', image: '/shop/cloth_glasses.png', name: '太陽眼鏡', cost: 60 },
-    { id: 'cloth_crown',   emoji: '👑', image: '/shop/cloth_crown.png',   name: '王冠',    cost: 80 },
-    { id: 'cloth_grad',    emoji: '🎓', image: '/shop/cloth_grad.png',    name: '博士帽',  cost: 100 },
+    { id: 'cloth_bracelet',      emoji: '📿', svgKey: 'bracelet', svgProps: { color: '#ec4899' },     pos: 'wrist', name: '粉手鍊',     cost: 20 },
+    { id: 'cloth_earring',       emoji: '💎', svgKey: 'earring',  svgProps: { color: '#f59e0b' },     pos: 'ear',   name: '金耳環',     cost: 20 },
+    { id: 'cloth_bracelet_blue', emoji: '📿', svgKey: 'bracelet', svgProps: { color: '#3b82f6' },     pos: 'wrist', name: '藍手鍊',     cost: 25 },
+    { id: 'cloth_earring_blue',  emoji: '💎', svgKey: 'earring',  svgProps: { color: '#06b6d4' },     pos: 'ear',   name: '藍耳環',     cost: 25 },
+    { id: 'cloth_earring_pink',  emoji: '💎', image: '/shop/cloth_earring_pink.png',                  pos: 'face',  name: '粉鑽耳環',   cost: 30 },
+    { id: 'cloth_earring_red',   emoji: '💎', image: '/shop/cloth_earring_red.png',                   pos: 'face',  name: '紅鑽耳環',   cost: 30 },
+    { id: 'cloth_necklace_heart',emoji: '💖', image: '/shop/cloth_necklace_heart.png',                pos: 'neck',  name: '愛心項鍊',   cost: 35 },
+    { id: 'cloth_necklace_gem',  emoji: '💎', image: '/shop/cloth_necklace_gem.png',                  pos: 'neck',  name: '寶石項鍊',   cost: 50 },
+    { id: 'cloth_bow',           emoji: '🎀', image: '/shop/cloth_bow.png',                                          name: '蝴蝶結',     cost: 20 },
+    { id: 'cloth_dress_red',    emoji: '👗', svgKey: 'dress',    svgProps: { color: '#ef4444', pattern: 'solid' },     pos: 'body',  name: '紅洋裝',   cost: 30 },
+    { id: 'cloth_dress_pink',   emoji: '👗', svgKey: 'dress',    svgProps: { color: '#ec4899', pattern: 'dots' },      pos: 'body',  name: '粉點洋裝', cost: 35 },
+    { id: 'cloth_dress_blue',   emoji: '👗', svgKey: 'dress',    svgProps: { color: '#3b82f6', pattern: 'stripes' },   pos: 'body',  name: '藍條紋裙', cost: 35 },
+    { id: 'cloth_dress_yellow', emoji: '👗', svgKey: 'dress',    svgProps: { color: '#facc15', pattern: 'floral' },    pos: 'body',  name: '黃花洋裝', cost: 40 },
+    { id: 'cloth_dress_purple', emoji: '👗', svgKey: 'dress',    svgProps: { color: '#a855f7', pattern: 'hearts' },    pos: 'body',  name: '紫愛心裙', cost: 40 },
+    { id: 'cloth_dress_green',  emoji: '👗', svgKey: 'dress',    svgProps: { color: '#10b981', pattern: 'dots' },      pos: 'body',  name: '綠點洋裝', cost: 40 },
+    { id: 'cloth_hat',          emoji: '🎩', image: '/shop/cloth_hat.png',                                                            name: '紳士帽',   cost: 40 },
+    { id: 'cloth_glasses',      emoji: '🕶️', image: '/shop/cloth_glasses.png',                                                       name: '太陽眼鏡', cost: 60 },
+    { id: 'cloth_crown',        emoji: '👑', image: '/shop/cloth_crown.png',                                                          name: '王冠',     cost: 80 },
+    { id: 'cloth_grad',         emoji: '🎓', image: '/shop/cloth_grad.png',                                                           name: '博士帽',   cost: 100 },
   ],
   toys: [
-    { id: 'toy_ball',       emoji: '⚽', image: '/shop/toy_ball.png',       name: '足球',      cost: 15 },
-    { id: 'toy_yoyo',       emoji: '🪀', image: '/shop/toy_yoyo.png',       name: '溜溜球',    cost: 25 },
-    { id: 'toy_teddy',      emoji: '🧸', image: '/shop/toy_teddy.png',      name: '小熊娃娃',  cost: 30 },
-    { id: 'toy_skateboard', emoji: '🛼', image: '/shop/toy_skateboard.png', name: '溜冰鞋',    cost: 50 },
-    { id: 'toy_rocket',     emoji: '🚀', image: '/shop/toy_rocket.png',     name: '火箭',      cost: 80 },
+    { id: 'toy_ball',       emoji: '⚽', image: '/shop/toy_ball.png',       name: '足球',     cost: 15 },
+    { id: 'toy_globe',      emoji: '🌍',                                    name: '地球',     cost: 20 },
+    { id: 'toy_yoyo',       emoji: '🪀', image: '/shop/toy_yoyo.png',       name: '溜溜球',   cost: 25 },
+    { id: 'toy_teddy',      emoji: '🧸', image: '/shop/toy_teddy.png',      name: '小熊娃娃', cost: 30 },
+    { id: 'toy_skateboard', emoji: '🛼', image: '/shop/toy_skateboard.png', name: '溜冰鞋',   cost: 50 },
+    { id: 'toy_rocket',     emoji: '🚀', image: '/shop/toy_rocket.png',     name: '火箭',     cost: 80 },
+    { id: 'toy_tv',         emoji: '📺',                                    name: '電視',     cost: 100 },
+    { id: 'toy_phone',      emoji: '📱',                                    name: '手機',     cost: 120 },
+    { id: 'toy_house',      emoji: '🏠',                                    name: '房子',     cost: 200 },
   ],
 };
 
-// 商品圖渲染(有 image 用圖,沒有 fallback emoji)
+// 商品圖渲染:image > svgKey > emoji (PNG 載入失敗自動回退到 SVG/emoji)
 function ShopItemVisual({ item, sizeClass = 'w-16 h-16' }) {
+  const [imgError, setImgError] = useState(false);
   if (!item) return null;
-  return item.image
-    ? <img src={item.image} alt={item.name} className={`${sizeClass} object-contain inline-block`} draggable="false" />
-    : <span className="text-5xl">{item.emoji}</span>;
+  if (item.image && !imgError) {
+    return <img src={item.image} alt={item.name} onError={() => setImgError(true)} className={`${sizeClass} object-contain inline-block`} draggable="false" />;
+  }
+  const SvgComp = item.svgKey && SVG_RENDERERS[item.svgKey];
+  if (SvgComp) {
+    return (
+      <div className={`${sizeClass} inline-flex items-center justify-center`}>
+        <SvgComp {...(item.svgProps || {})} size="100%" />
+      </div>
+    );
+  }
+  return <span className={`${sizeClass} inline-flex items-center justify-center text-4xl leading-none`}>{item.emoji}</span>;
 }
 
 const findItem = (category, id) => SHOP_ITEMS[category]?.find(i => i.id === id);
@@ -282,8 +496,20 @@ const DEFAULT_PET_DATA = {
   ownedClothes: [],
   ownedToys: [],
   foodInventory: {},
-  equipped: { clothes: null, toy: null },
+  equipped: { clothes: null, toys: [] },
 };
+
+const MAX_TOYS_EQUIPPED = 3;
+
+// 把舊版 equipped.toy (string) 遷移成 equipped.toys (array, max 3)
+function migrateEquipped(equipped) {
+  if (!equipped) return { clothes: null, toys: [] };
+  const clothes = equipped.clothes ?? null;
+  let toys = [];
+  if (Array.isArray(equipped.toys)) toys = equipped.toys.slice(0, MAX_TOYS_EQUIPPED);
+  else if (typeof equipped.toy === 'string' && equipped.toy) toys = [equipped.toy];
+  return { clothes, toys };
+}
 
 // ============ 主元件 ============
 export default function App() {
@@ -314,15 +540,20 @@ export default function App() {
       if (raw) {
         const loaded = JSON.parse(raw);
         if (loaded && Array.isArray(loaded.users) && loaded.users.length > 0) {
-          // 把舊版的金幣併入星星(一次性遷移)
+          // 把舊版的金幣併入星星 + equipped.toy (string) 遷移成 toys (array)
           let migrated = false;
           loaded.users = loaded.users.map(u => {
-            const coins = u.pet?.coins || 0;
-            if (coins > 0) {
-              migrated = true;
-              return { ...u, stars: (u.stars || 0) + coins, pet: { ...u.pet, coins: 0 } };
-            }
-            return u;
+            if (!u.pet) return u;
+            const coins = u.pet.coins || 0;
+            const oldEq = u.pet.equipped || {};
+            const needsEquippedMigrate = !Array.isArray(oldEq.toys) || 'toy' in oldEq;
+            if (coins === 0 && !needsEquippedMigrate) return u;
+            migrated = true;
+            return {
+              ...u,
+              stars: (u.stars || 0) + coins,
+              pet: { ...u.pet, coins: 0, equipped: migrateEquipped(u.pet.equipped) },
+            };
           });
           if (migrated) {
             try { localStorage.setItem('app_data', JSON.stringify(loaded)); } catch (e) {}
@@ -344,7 +575,7 @@ export default function App() {
           ...DEFAULT_PET_DATA,
           ...oldPet,
           name: oldPet.name || PETS[oldPet.type].name,
-          equipped: { ...DEFAULT_PET_DATA.equipped, ...(oldPet.equipped || {}) },
+          equipped: migrateEquipped(oldPet.equipped),
           foodInventory: oldPet.foodInventory || {},
           ownedClothes: oldPet.ownedClothes || [],
           ownedToys: oldPet.ownedToys || [],
@@ -377,8 +608,13 @@ export default function App() {
       const remoteTime = remote.updatedAt || 0;
       if (remoteTime <= lastWriteAtRef.current) return; // 跳過自己的回音
       lastWriteAtRef.current = remoteTime;
+      // 遠端可能還是舊 equipped.toy (string) 格式 → 拉進來時統一遷移成 toys (array)
+      const users = remote.users.map(u => u.pet
+        ? { ...u, pet: { ...u.pet, equipped: migrateEquipped(u.pet.equipped) } }
+        : u
+      );
       setAppData(prev => {
-        const next = { users: remote.users, currentUserId: prev.currentUserId };
+        const next = { users, currentUserId: prev.currentUserId };
         try { localStorage.setItem('app_data', JSON.stringify(next)); } catch (e) {}
         return next;
       });
@@ -460,15 +696,34 @@ export default function App() {
     } else if (category === 'toys') {
       if (p.ownedToys.includes(item.id)) return u;
       next.ownedToys = [...p.ownedToys, item.id];
-      next.equipped = { ...p.equipped, toy: item.id };
+      // 自動裝備:若玩具槽未滿就加進去,滿了則不自動換上
+      const currentToys = p.equipped.toys || [];
+      if (currentToys.length < MAX_TOYS_EQUIPPED) {
+        next.equipped = { ...p.equipped, toys: [...currentToys, item.id] };
+      }
     }
     return { ...u, stars: u.stars - item.cost, pet: next };
   });
 
-  const equipItem = (slot, itemId) => updateCurrentUser(u => ({
-    ...u,
-    pet: { ...u.pet, equipped: { ...u.pet.equipped, [slot]: u.pet.equipped[slot] === itemId ? null : itemId } },
-  }));
+  const equipItem = (slot, itemId) => updateCurrentUser(u => {
+    const eq = u.pet.equipped;
+    if (slot === 'clothes') {
+      return { ...u, pet: { ...u.pet, equipped: { ...eq, clothes: eq.clothes === itemId ? null : itemId } } };
+    }
+    if (slot === 'toy') {
+      const current = eq.toys || [];
+      let nextToys;
+      if (current.includes(itemId)) {
+        nextToys = current.filter(id => id !== itemId);            // 已在玩 → 收起
+      } else if (current.length >= MAX_TOYS_EQUIPPED) {
+        nextToys = [...current.slice(1), itemId];                  // 槽滿 → 踢掉最舊的再加
+      } else {
+        nextToys = [...current, itemId];                           // 還有空位 → 直接加
+      }
+      return { ...u, pet: { ...u.pet, equipped: { ...eq, toys: nextToys } } };
+    }
+    return u;
+  });
 
   const feedPet = (itemId) => {
     updateCurrentUser(u => {
@@ -723,7 +978,7 @@ export default function App() {
 // ============ 首頁 ============
 function HomeScreen({ user, stars, petData, onPick, onSwitchUser }) {
   const clothes = petData.equipped.clothes ? findItem('clothes', petData.equipped.clothes) : null;
-  const toy = petData.equipped.toy ? findItem('toys', petData.equipped.toy) : null;
+  const toys = (petData.equipped.toys || []).map(id => findItem('toys', id)).filter(Boolean);
   const pet = PETS[petData.type];
 
   return (
@@ -747,7 +1002,7 @@ function HomeScreen({ user, stars, petData, onPick, onSwitchUser }) {
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex-shrink-0">
-              <PetVisual type={petData.type} clothes={clothes} toy={toy} size="sm" />
+              <PetVisual type={petData.type} clothes={clothes} toys={toys} size="sm" />
             </div>
             <div className="flex-1 text-left">
               <div className="text-white text-xs opacity-80 drop-shadow">{user.name} 的</div>
@@ -1099,7 +1354,7 @@ function PetHomeScreen({ user, petData, onShop, onEquip, onFeed, feedingItem }) 
   const [tab, setTab] = useState('feed');
   const pet = PETS[petData.type];
   const clothes = petData.equipped.clothes ? findItem('clothes', petData.equipped.clothes) : null;
-  const toy = petData.equipped.toy ? findItem('toys', petData.equipped.toy) : null;
+  const toys = (petData.equipped.toys || []).map(id => findItem('toys', id)).filter(Boolean);
   const feedingEmoji = feedingItem ? findItem('food', feedingItem)?.emoji : null;
   const foodList = Object.entries(petData.foodInventory).filter(([, c]) => c > 0);
 
@@ -1108,7 +1363,7 @@ function PetHomeScreen({ user, petData, onShop, onEquip, onFeed, feedingItem }) 
       <div className={`bg-gradient-to-br ${pet.color} rounded-3xl p-6 mb-4 shadow-xl border-4 border-white text-center relative overflow-hidden`}>
         <div className="text-sm text-white opacity-90 drop-shadow">{user?.name || '我'} 的</div>
         <div className="text-3xl font-bold text-white mb-2 drop-shadow">{petData.name}</div>
-        <PetVisual type={petData.type} clothes={clothes} toy={toy} feedingEmoji={feedingEmoji} size="lg" />
+        <PetVisual type={petData.type} clothes={clothes} toys={toys} feedingEmoji={feedingEmoji} size="lg" />
         <div className="mt-3 text-white text-sm drop-shadow">陪伴次數:{petData.affection} 次 💕</div>
       </div>
 
@@ -1197,26 +1452,37 @@ function PetHomeScreen({ user, petData, onShop, onEquip, onFeed, feedingItem }) 
               還沒有玩具喔!去商店買好玩的給牠 🛒
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {petData.ownedToys.map(id => {
-                const item = findItem('toys', id);
-                if (!item) return null;
-                const equipped = petData.equipped.toy === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => onEquip('toy', id)}
-                    className={`rounded-2xl p-3 shadow-md border-2 active:scale-95 transition ${
-                      equipped ? 'bg-green-200 border-green-400 ring-2 ring-green-400' : 'bg-blue-50 hover:bg-blue-100 border-blue-200'
-                    }`}
-                  >
-                    <ShopItemVisual item={item} sizeClass="w-14 h-14" />
-                    <div className="text-xs text-gray-600 font-bold">{item.name}</div>
-                    {equipped && <div className="text-xs text-green-600 font-bold">在玩</div>}
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              <div className="text-xs text-gray-500 mb-2 text-center">
+                同時最多拿 {MAX_TOYS_EQUIPPED} 個玩具一起玩
+                {(petData.equipped.toys || []).length > 0 && (
+                  <> · 現在在玩 {petData.equipped.toys.length} 個</>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {petData.ownedToys.map(id => {
+                  const item = findItem('toys', id);
+                  if (!item) return null;
+                  const equippedToys = petData.equipped.toys || [];
+                  const equipped = equippedToys.includes(id);
+                  const slotFull = !equipped && equippedToys.length >= MAX_TOYS_EQUIPPED;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => onEquip('toy', id)}
+                      className={`rounded-2xl p-3 shadow-md border-2 active:scale-95 transition ${
+                        equipped ? 'bg-green-200 border-green-400 ring-2 ring-green-400' : 'bg-blue-50 hover:bg-blue-100 border-blue-200'
+                      }`}
+                    >
+                      <ShopItemVisual item={item} sizeClass="w-14 h-14" />
+                      <div className="text-xs text-gray-600 font-bold">{item.name}</div>
+                      {equipped && <div className="text-xs text-green-600 font-bold">在玩</div>}
+                      {slotFull && <div className="text-[10px] text-orange-500">點會換掉最舊的</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )
         )}
       </div>
@@ -2774,22 +3040,25 @@ function LogicPatternGame({ onCorrect, onWrong }) {
   const newRound = () => {
     const pool = [...PATTERN_EMOJIS].sort(() => Math.random() - 0.5);
     const types = [
-      // 基礎(score < 3)
-      () => { const [a, b] = pool;    return { pat: [a, b, a, b, a, b], next: b, all: [a, b] }; },         // ABABAB
-      () => { const [a, b] = pool;    return { pat: [a, a, b, b, a, a], next: b, all: [a, b] }; },         // AABBAA
-      // 進階(score >= 3)
-      () => { const [a, b, c] = pool; return { pat: [a, b, c, a, b, c, a], next: b, all: [a, b, c] }; },   // ABCABCA
-      () => { const [a, b] = pool;    return { pat: [a, b, b, a, b, b, a], next: b, all: [a, b] }; },      // ABBABBA
-      () => { const [a, b] = pool;    return { pat: [a, a, b, a, a, b, a], next: a, all: [a, b] }; },      // AABAABA
-      () => { const [a, b, c] = pool; return { pat: [a, b, c, c, b, a, b], next: c, all: [a, b, c] }; },   // 回文 ABCCBA
-      // 高階(score >= 6)
-      () => { const [a, b, c] = pool; return { pat: [a, b, c, b, a, b, c], next: b, all: [a, b, c] }; },   // ABCBABC
-      () => { const [a, b, c, d] = pool; return { pat: [a, b, c, d, a, b, c], next: d, all: [a, b, c, d] }; }, // ABCDABCD
-      () => { const [a, b, c] = pool; return { pat: [a, a, b, c, a, a, b], next: c, all: [a, b, c] }; },   // AABCAABC
-      () => { const [a, b, c] = pool; return { pat: [a, b, b, c, c, c, a], next: b, all: [a, b, c] }; },   // ABBCCCABB
+      // Tier 1 — 基礎(score < 2)
+      () => { const [a, b] = pool;    return { pat: [a, b, a, b, a, b], next: a, all: [a, b] }; },         // ABABAB → A (FIXED)
+      () => { const [a, b] = pool;    return { pat: [a, a, b, b, a, a], next: b, all: [a, b] }; },         // AABBAA → B
+      // Tier 2 — 進階(score < 5)
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, a, b, c, a], next: b, all: [a, b, c] }; },   // ABCABCA → B
+      () => { const [a, b] = pool;    return { pat: [a, b, b, a, b, b, a], next: b, all: [a, b] }; },      // ABBABBA → B
+      () => { const [a, b] = pool;    return { pat: [a, a, b, a, a, b, a], next: a, all: [a, b] }; },      // AABAABA → A
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, c, b, a, a], next: b, all: [a, b, c] }; },   // 回文 ABCCBA + 重複 → B
+      // Tier 3 — 高階(score < 9)
+      () => { const [a, b, c] = pool; return { pat: [a, b, c, b, a, b, c], next: b, all: [a, b, c] }; },   // ABCBABC (彈跳)→ B
+      () => { const [a, b, c, d] = pool; return { pat: [a, b, c, d, a, b, c], next: d, all: [a, b, c, d] }; }, // ABCDABCD → D
+      () => { const [a, b, c] = pool; return { pat: [a, a, b, c, a, a, b], next: c, all: [a, b, c] }; },   // AABCAABC → C
+      // Tier 4 — 最難(score >= 9)
+      () => { const [a, b, c] = pool; return { pat: [a, b, b, c, c, c, a], next: b, all: [a, b, c] }; },   // 1A 2B 3C 重複 → B
+      () => { const [a, b, c, d, e] = pool; return { pat: [a, b, c, d, e, a, b, c, d], next: e, all: [a, b, c, d, e] }; }, // ABCDE 5週期 → E
+      () => { const [a, b, c] = pool; return { pat: [a, a, b, b, c, c, a], next: a, all: [a, b, c] }; },   // AABBCC 6週期 → A
     ];
-    // 漸進難度:分數越高,題型範圍越廣
-    const max = score < 3 ? 2 : score < 6 ? 6 : types.length;
+    // 漸進難度:4 階段
+    const max = score < 2 ? 2 : score < 5 ? 6 : score < 9 ? 9 : types.length;
     const { pat, next, all } = types[Math.floor(Math.random() * max)]();
     const dist = new Set();
     all.forEach(x => x !== next && dist.add(x));
@@ -3029,11 +3298,16 @@ function LogicSymmetryGame({ onCorrect, onWrong }) {
     '🐎', '🐬', '🦈', '🦏', '🐃', '🐊', '🦃', '🐿️', '🦘', '🐪',
     '🦩', '🦚', '🦢', '🦝', '🐗',
   ];
-  const TRANSFORMS = [
+  const TRANSFORMS_EASY = [
     { id: 'normal',    style: {} },
     { id: 'mirrorH',   style: { transform: 'scaleX(-1)' } },
     { id: 'mirrorV',   style: { transform: 'scaleY(-1)' } },
     { id: 'rotate180', style: { transform: 'rotate(180deg)' } },
+  ];
+  const TRANSFORMS_HARD = [
+    ...TRANSFORMS_EASY,
+    { id: 'rotate90',  style: { transform: 'rotate(90deg)' } },
+    { id: 'rotate270', style: { transform: 'rotate(-90deg)' } },
   ];
   const [target, setTarget] = useState(null);
   const [opts, setOpts] = useState([]);
@@ -3049,7 +3323,9 @@ function LogicSymmetryGame({ onCorrect, onWrong }) {
     // 更新最近 10 個
     recentRef.current = [t, ...recent].slice(0, Math.min(10, SYMMETRY_EMOJIS.length - 1));
     setTarget(t);
-    setOpts(TRANSFORMS.slice().sort(() => Math.random() - 0.5));
+    // 高分(>= 4)解鎖 90/270 度旋轉干擾 → 6 選項
+    const transforms = score >= 4 ? TRANSFORMS_HARD : TRANSFORMS_EASY;
+    setOpts(transforms.slice().sort(() => Math.random() - 0.5));
     setFeedback(null);
   };
 
@@ -3079,14 +3355,14 @@ function LogicSymmetryGame({ onCorrect, onWrong }) {
         <span className="text-7xl text-gray-300">?</span>
       </div>
       <p className="text-base text-gray-600 mb-3">把它放鏡子前 → 哪個是鏡子裡的樣子?</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid ${opts.length > 4 ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
         {opts.map(o => {
           const c = feedback?.id === o.id;
           let bg = 'bg-white hover:bg-pink-100';
           if (c) bg = feedback.type === 'correct' ? 'bg-green-300 scale-110' : 'bg-red-300 animate-shake';
           return (
-            <button key={o.id} onClick={() => pick(o.id)} className={`${bg} rounded-3xl p-5 shadow-md border-2 border-pink-200 transition`}>
-              <span className="text-7xl inline-block" style={o.style}>{target}</span>
+            <button key={o.id} onClick={() => pick(o.id)} className={`${bg} rounded-3xl p-3 md:p-5 shadow-md border-2 border-pink-200 transition`}>
+              <span className={`${opts.length > 4 ? 'text-6xl' : 'text-7xl'} inline-block`} style={o.style}>{target}</span>
             </button>
           );
         })}
@@ -3100,18 +3376,39 @@ function LogicSymmetryGame({ onCorrect, onWrong }) {
 
 // ============ 邏輯:影子配對 ============
 function LogicShadowGame({ onCorrect, onWrong }) {
-  const SHADOW_EMOJIS = ['🐰', '🐶', '🐱', '🐢', '🐸', '🦁', '🐯', '🐻', '🦒', '🐘', '🐧', '🐦', '🦋', '🐳', '🐙'];
+  // 按輪廓分組:同組看影子很接近,跨組差異明顯
+  const SHADOW_GROUPS = [
+    ['🐰', '🐶', '🐱', '🦊', '🦁', '🐯', '🐻', '🐨'],   // 圓臉小中型四足
+    ['🐢', '🐸', '🦎'],                                  // 趴的兩棲爬蟲
+    ['🐧', '🐦', '🦉', '🦅', '🐔', '🦃'],                // 鳥
+    ['🐳', '🐙', '🦈', '🐬', '🐟'],                       // 海洋
+    ['🦒', '🐘', '🐎', '🐪', '🦏'],                       // 大型陸地
+    ['🦋', '🐝', '🐞', '🦗'],                             // 飛蟲
+  ];
+  const ALL_SHADOW = SHADOW_GROUPS.flat();
   const [target, setTarget] = useState(null);
   const [opts, setOpts] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [score, setScore] = useState(0);
 
   const newRound = () => {
-    const shuffled = [...SHADOW_EMOJIS].sort(() => Math.random() - 0.5);
-    const t = shuffled[0];
-    const choices = shuffled.slice(0, 4);
+    const t = ALL_SHADOW[Math.floor(Math.random() * ALL_SHADOW.length)];
+    const tGroup = SHADOW_GROUPS.find(g => g.includes(t)) || [];
+    let distractors;
+    if (score >= 3 && tGroup.length >= 4) {
+      // 高分:全部干擾項都從同組抽 → 輪廓相近,只能靠細節分辨
+      distractors = tGroup.filter(e => e !== t).sort(() => Math.random() - 0.5).slice(0, 3);
+    } else if (score >= 6 && tGroup.length >= 2) {
+      // 中高分:至少 2 個同組干擾
+      const sameGroup = tGroup.filter(e => e !== t).sort(() => Math.random() - 0.5).slice(0, 2);
+      const others = ALL_SHADOW.filter(e => e !== t && !sameGroup.includes(e)).sort(() => Math.random() - 0.5).slice(0, 1);
+      distractors = [...sameGroup, ...others];
+    } else {
+      // 低分:跨組隨機(輪廓差異大,好分辨)
+      distractors = ALL_SHADOW.filter(e => e !== t).sort(() => Math.random() - 0.5).slice(0, 3);
+    }
     setTarget(t);
-    setOpts(choices.sort(() => Math.random() - 0.5));
+    setOpts([t, ...distractors].sort(() => Math.random() - 0.5));
     setFeedback(null);
   };
 
@@ -3168,6 +3465,18 @@ const PENTOMINOES = {
   P: [[1,0],[2,0],[1,1],[2,1],[1,2]],
   Z: [[1,0],[2,0],[2,1],[2,2],[3,2]],
   N: [[2,0],[2,1],[2,2],[1,2],[1,3]],
+  W: [[0,0],[0,1],[1,1],[1,2],[2,2]],   // 階梯狀
+};
+
+// 高分時用「相似形狀的旋轉」當干擾項 — 跟目標看起來很像但其實是不同形狀
+const SIMILAR_SHAPES = {
+  L: ['Y', 'N'],
+  F: ['P', 'W'],
+  Y: ['L', 'N'],
+  P: ['F', 'L'],
+  Z: ['F', 'N', 'W'],
+  N: ['L', 'Z', 'Y'],
+  W: ['F', 'Z', 'N'],
 };
 
 const SHAPE_COLORS = ['#a855f7', '#3b82f6', '#ec4899', '#f97316', '#10b981', '#06b6d4'];
@@ -3201,13 +3510,40 @@ function LogicRotationGame({ onCorrect, onWrong }) {
 
     // 正解:同形狀旋轉 90/180/270
     const correctAngle = [90, 180, 270][Math.floor(Math.random() * 3)];
-    // 干擾:鏡像 + 不同旋轉
-    const mirrorAngles = [0, 90, 180, 270].sort(() => Math.random() - 0.5).slice(0, 3);
+    const mirrorAngles = [0, 90, 180, 270].sort(() => Math.random() - 0.5);
+    const anyRot = () => [0, 90, 180, 270][Math.floor(Math.random() * 4)];
+    const similar = SIMILAR_SHAPES[sh] || [];
+
+    // 干擾策略:
+    //   score < 3:   3 個都是「同形狀鏡像」(只要看出鏡像就好)
+    //   score 3-6:   2 個鏡像 + 1 個「相似形狀的旋轉」
+    //   score >= 7:  1 個鏡像 + 2 個「相似形狀的旋轉」(最難)
+    let distractors;
+    if (score < 3 || similar.length < 1) {
+      distractors = [
+        { id: 'mir0', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[0]}deg)`, isAnswer: false },
+        { id: 'mir1', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[1]}deg)`, isAnswer: false },
+        { id: 'mir2', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[2]}deg)`, isAnswer: false },
+      ];
+    } else if (score < 7 || similar.length < 2) {
+      const sim = similar[Math.floor(Math.random() * similar.length)];
+      distractors = [
+        { id: 'mir0', shape: sh,  transform: `scaleX(-1) rotate(${mirrorAngles[0]}deg)`, isAnswer: false },
+        { id: 'mir1', shape: sh,  transform: `scaleX(-1) rotate(${mirrorAngles[1]}deg)`, isAnswer: false },
+        { id: 'sim0', shape: sim, transform: `rotate(${anyRot()}deg)`,                    isAnswer: false },
+      ];
+    } else {
+      const sims = [...similar].sort(() => Math.random() - 0.5).slice(0, 2);
+      distractors = [
+        { id: 'mir0', shape: sh,      transform: `scaleX(-1) rotate(${mirrorAngles[0]}deg)`, isAnswer: false },
+        { id: 'sim0', shape: sims[0], transform: `rotate(${anyRot()}deg)`,                    isAnswer: false },
+        { id: 'sim1', shape: sims[1], transform: `rotate(${anyRot()}deg)`,                    isAnswer: false },
+      ];
+    }
+
     const choices = [
       { id: 'rot', shape: sh, transform: `rotate(${correctAngle}deg)`, isAnswer: true },
-      { id: 'mir0', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[0]}deg)`, isAnswer: false },
-      { id: 'mir1', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[1]}deg)`, isAnswer: false },
-      { id: 'mir2', shape: sh, transform: `scaleX(-1) rotate(${mirrorAngles[2]}deg)`, isAnswer: false },
+      ...distractors,
     ];
 
     setTarget(sh);
@@ -3260,7 +3596,7 @@ function LogicRotationGame({ onCorrect, onWrong }) {
   );
 }
 
-// ============ 邏輯:找缺塊(Raven's 簡化版,3x3 拉丁方陣) ============
+// ============ 邏輯:找缺塊(Raven's 簡化版,3x3 / 4x4 拉丁方陣) ============
 function LogicMatrixGame({ onCorrect, onWrong }) {
   const POOL = ['🔴', '🟢', '🔵', '🟡', '🟣', '🟠', '⭐', '❤️', '🌸', '🍎', '💎', '🔶'];
   const [grid, setGrid] = useState(null);
@@ -3271,20 +3607,31 @@ function LogicMatrixGame({ onCorrect, onWrong }) {
   const [score, setScore] = useState(0);
 
   const newRound = () => {
+    // 難度:score < 8 → 3x3,score >= 8 → 4x4 (5 選項)
+    const size = score >= 8 ? 4 : 3;
     const shuffled = [...POOL].sort(() => Math.random() - 0.5);
-    const items = shuffled.slice(0, 3);
-    // 拉丁方陣:每列、每行都有三個不同的元素
+    const items = shuffled.slice(0, size);
     const cyclic = (arr, n) => [...arr.slice(n), ...arr.slice(0, n)];
-    const newGrid = [cyclic(items, 0), cyclic(items, 1), cyclic(items, 2)];
-    // 隨機挑一格隱藏(60% 機率右下,其他隨機)
-    let hr = 2, hc = 2;
-    if (Math.random() > 0.6) {
-      hr = Math.floor(Math.random() * 3);
-      hc = Math.floor(Math.random() * 3);
+    // score < 3:固定 shift 順序 0,1,2 (好預測); score >= 3:隨機排列 shift (更難看出規律)
+    let shifts;
+    if (score < 3) {
+      shifts = Array.from({ length: size }, (_, i) => i);
+    } else {
+      shifts = Array.from({ length: size }, (_, i) => i).sort(() => Math.random() - 0.5);
+    }
+    const newGrid = shifts.map(n => cyclic(items, n));
+    // 隱藏位置:低分 60% 偏右下,其他全隨機
+    let hr, hc;
+    if (score < 3 && Math.random() < 0.6) {
+      hr = size - 1; hc = size - 1;
+    } else {
+      hr = Math.floor(Math.random() * size);
+      hc = Math.floor(Math.random() * size);
     }
     const ans = newGrid[hr][hc];
-    // 4 選項:正解 + 3 干擾(從 pool 其他元素抽)
-    const others = shuffled.filter(e => e !== ans).slice(0, 3);
+    // 4 或 5 選項 (4x4 給 5 個)
+    const numDistract = size === 4 ? 4 : 3;
+    const others = shuffled.filter(e => e !== ans).slice(0, numDistract);
     setGrid(newGrid);
     setHidden([hr, hc]);
     setAnswer(ans);
@@ -3314,25 +3661,26 @@ function LogicMatrixGame({ onCorrect, onWrong }) {
       <h2 className="text-3xl font-bold text-rose-600 mb-3">🎯 找缺塊</h2>
       <p className="text-sm text-gray-600 mb-3">每一<b>列</b>、每一<b>行</b>都要有 3 種不同的</p>
       <div className="bg-white rounded-3xl p-4 shadow-xl mb-4 border-4 border-rose-300 inline-block">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${grid.length}, minmax(0, 1fr))` }}>
           {grid.flatMap((row, r) => row.map((cell, c) => {
             const isHidden = r === hidden[0] && c === hidden[1];
             const showAns = isHidden && feedback?.type === 'correct';
+            const isLarge = grid.length === 3;
             return (
               <div key={`${r}-${c}`}
-                className={`w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center text-4xl md:text-5xl shadow ${
+                className={`${isLarge ? 'w-16 h-16 md:w-20 md:h-20 text-4xl md:text-5xl' : 'w-12 h-12 md:w-16 md:h-16 text-3xl md:text-4xl'} rounded-xl flex items-center justify-center shadow ${
                   isHidden
                     ? (showAns ? 'bg-green-200 border-4 border-green-500' : 'bg-yellow-100 border-4 border-dashed border-yellow-500')
                     : 'bg-gray-50 border-2 border-gray-200'
                 }`}>
-                {isHidden && !showAns ? <span className="text-yellow-600 font-bold text-3xl">?</span> : cell}
+                {isHidden && !showAns ? <span className="text-yellow-600 font-bold text-2xl md:text-3xl">?</span> : cell}
               </div>
             );
           }))}
         </div>
       </div>
       <p className="text-base text-gray-600 mb-3">❓ 應該是哪個?</p>
-      <div className="grid grid-cols-4 gap-2">
+      <div className={`grid gap-2 ${opts.length === 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
         {opts.map((e, i) => {
           const c = feedback?.e === e;
           let bg = 'bg-white hover:bg-rose-100';
